@@ -1,0 +1,7 @@
+# Never commit secrets or local junk
+.env
+.env.*
+!.env.example
+*.key
+.DS_Store
+node_modules/
