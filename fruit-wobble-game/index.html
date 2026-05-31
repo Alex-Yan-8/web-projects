@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Fruit Wobble</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
   /* ===================== BASE & BACKGROUND SCENE ===================== */
   * { box-sizing: border-box; }
@@ -361,8 +364,9 @@
   #worldFx {
     position: fixed; inset: 0;
     pointer-events: none;
-    z-index: 1;
-    opacity: 0.9;
+    z-index: 0;            /* behind gameplay (was 1 → particles drew over the jar/HUD) */
+    opacity: 0.55;         /* softer so it reads as atmosphere, not screen dirt */
+    transition: opacity 0.6s ease;
     will-change: background-position, opacity, transform;
   }
   @keyframes fxSnowfall {
@@ -3398,6 +3402,16 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
   .fw-intro-skip.show { opacity: .85; pointer-events: auto; }
+
+  /* Smooth overlay reveals — fade the backdrop in (display can't transition, so animate opacity) */
+  [id$="Overlay"].active, #overlay.active { animation: fwFadeIn .24s ease both; }
+  @keyframes fwFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Respect reduced-motion: stop the perpetual world FX + frenzy hue churn (perf + accessibility) */
+  @media (prefers-reduced-motion: reduce) {
+    #worldFx { animation: none !important; }
+    body.frenzy #worldFx, body.frenzy #app, body.frenzy #jar-wrap, body.frenzy #score { animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -4414,7 +4428,9 @@ const Save = (() => {
 // 3-star threshold is tightened: must beat par by 5 moves (min threshold of 3).
 function computeStars(cleared, moves, par) {
   if (!cleared) return 0;
-  const threeStarCap = Math.max(3, par - 5);
+  // 3-star = within ~20% of par (consistent across levels). The old `par-5` was inverted: brutal on
+  // low-par early levels (par 6 → needed ≤3 moves) yet lenient on high-par late ones.
+  const threeStarCap = Math.max(3, Math.ceil(par * 0.8));
   if (moves <= threeStarCap) return 3;
   if (moves <= Math.ceil(par * 1.5)) return 2;
   return 1;
@@ -4801,6 +4817,7 @@ function startLevel(i, fromPlayer = false) {
   // Reset Hype meter + the once-per-level frenzy; cache prestige-derived scoring values for this level
   state.hype = 0;
   state.hypeLastPop = 0;
+  state._maxHypeFired = false;
   state._frenzyFired = false;
   state.scoreScale = scoreScale(); // base-score factor × prestige multiplier (cached for the hot path)
   const _pr = (Save.load().prestigeRewards || {});
@@ -4854,7 +4871,7 @@ function renderObjectivePanel(lv) {
 
 function _movesLineHtml(lv) {
   const par = lv.parMoves || 20;
-  const star3 = Math.max(3, par - 5);
+  const star3 = Math.max(3, Math.ceil(par * 0.8)); // keep in sync with computeStars
   const star2 = Math.ceil(par * 1.5);
   const moves = state.moveCount || 0;
   // Show which star tier you're still on track for
@@ -7392,6 +7409,9 @@ function processChain(chain) {
   // Stats: count chains + track biggest chain length
   Stats.bump("chainsCount");
   Stats.max("biggestChain", chain.length);
+  // Building a big fruit is a MOVE — refresh the Hype grace so the meter doesn't bleed out while you
+  // set up a merge (previously only pops refreshed it, punishing the build-big-then-pop loop).
+  state.hypeLastPop = performance.now();
   tutorialOnChain();
   // Rapid-chain combo counter — kept for the biggestCombo stat + animal cheers only (scoring is now
   // driven by the Hype meter, which builds on pops). No combo banners / no combo multiplier.
@@ -7808,6 +7828,13 @@ function tickHype(dt) {
   const now = performance.now();
   if ((state.hype || 0) > 0 && now - (state.hypeLastPop || 0) > HYPE_GRACE) {
     state.hype = Math.max(0, state.hype - HYPE_DECAY * dt);
+  }
+  // MAX HYPE! — a payoff moment the first time the meter fills each level.
+  if ((state.hype || 0) >= 0.999 && !state._maxHypeFired && state.levelInProgress) {
+    state._maxHypeFired = true;
+    showBanner("⚡ MAX HYPE! ×" + Math.round(hypeMult()));
+    shakeScreen(2, 300);
+    Sound.play("rainbow");
   }
   updateHypeHUD();
 }
