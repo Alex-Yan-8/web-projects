@@ -10499,11 +10499,21 @@ function boot() {
   // Background level renders behind the home screen for a sneak peek of gameplay
   startLevel(Math.min(data.unlocked, LEVELS.length - 1));
   requestAnimationFrame(frame);
-  // App-open intro animation — plays on EVERY load, then reveals the home screen.
-  // Skippable (tap / SKIP button). Falls back straight to home if the module is unavailable.
-  if (window.FruitWobbleIntro) {
+  // App-open intro animation — plays once per "real visit", NOT on rapid refreshes.
+  // We treat 30+ min since the last load as a new visit (the standard session-idle gap), tracked
+  // in localStorage so it survives a tab close. Every load stamps the time, so continuous
+  // testing/refreshing keeps the session alive and stays quiet; only a genuine gap replays it.
+  const INTRO_SESSION_GAP_MS = 30 * 60 * 1000;
+  let lastLoad = 0;
+  try { lastLoad = parseInt(localStorage.getItem("fwIntroLastShown") || "0", 10) || 0; } catch (e) {}
+  const now = Date.now();
+  const isNewVisit = (now - lastLoad) > INTRO_SESSION_GAP_MS;
+  try { localStorage.setItem("fwIntroLastShown", String(now)); } catch (e) {} // keep the session warm
+  if (window.FruitWobbleIntro && isNewVisit) {
     try {
-      FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted }).play();
+      // speed < 1 slows the timeline (now = elapsed × speed). Default 1 ran the whole sting in
+      // ~3.3s, which felt rushed — 0.6 stretches it to ~5.5s so each beat is actually visible.
+      FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted, speed: 0.6 }).play();
     } catch (e) {
       console.error("intro failed, showing home", e);
       showHomeScreen(); // never let an intro hiccup block the menu
