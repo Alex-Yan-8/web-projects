@@ -3041,6 +3041,23 @@
     min-height: 30px;
   }
   #homeDailyCard:empty { display: none; }
+  /* Daily Goals card */
+  #homeGoalsCard:empty { display: none; }
+  #homeGoalsCard {
+    width: 100%; margin: 10px 0 0; padding: 12px 14px; border: 3px solid #fff; border-radius: 16px;
+    background: linear-gradient(180deg, #b79bff, #8a63e6); color: #fff;
+    box-shadow: 0 5px 0 #6a3fc0, 0 8px 12px rgba(90,40,160,0.25);
+    display: flex; flex-direction: column; gap: 8px; text-align: left;
+  }
+  #homeGoalsCard .goalTitle { font-weight: 900; letter-spacing: 1.2px; font-size: 13px; opacity: .95; }
+  #homeGoalsCard .goalRow { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 13px; }
+  #homeGoalsCard .gIcon { font-size: 18px; }
+  #homeGoalsCard .gBody { flex: 1; min-width: 0; }
+  #homeGoalsCard .goalBar { height: 8px; border-radius: 5px; background: rgba(0,0,0,0.22); overflow: hidden; margin-top: 4px; }
+  #homeGoalsCard .goalBar > i { display: block; height: 100%; background: linear-gradient(180deg, #ffe07a, #ffb13b); border-radius: 5px; }
+  #homeGoalsCard .goalClaim { background: linear-gradient(180deg, #9be37a, #4fbb44); border: 2px solid #fff; color: #fff; border-radius: 11px; padding: 6px 11px; font-weight: 900; font-size: 12px; box-shadow: 0 3px 0 #2c8a2a; cursor: pointer; white-space: nowrap; }
+  #homeGoalsCard .goalClaim:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c8a2a; }
+  #homeGoalsCard .goalDone { color: #d6ffd0; font-weight: 900; font-size: 15px; }
   .homeDailyTitle {
     font-size: 11px; font-weight: 900; letter-spacing: 1.2px;
     color: #c08820;
@@ -3531,6 +3548,7 @@
     </div>
     <div id="homeStreakCard"></div>
     <div id="homeAfkCard"></div>
+    <div id="homeGoalsCard"></div>
     <div id="homeDailyCard"></div>
     <div class="homeFooterRow">
       <button class="homeFooterBtn" id="achievementsHomeBtn" type="button">🏆 Achievements</button>
@@ -4340,6 +4358,7 @@ const Save = (() => {
       seasonXp: 0,
       seasonClaimed: [],
       prestige: 0,
+      dailyQuests: null,       // { date, quests:[{id,baseline,claimed}] } — daily goals
       prestigePower: 0,        // banked stars driving the prestige score multiplier
       bankedStars: 0,          // high-water mark of stars already banked (no re-banking)
       prestigeRewards: {},     // permanent per-prestige unlocks (gacha, fruits, hype cap…)
@@ -10275,12 +10294,72 @@ function frame(now) {
 }
 
 /* ---------------------- BOOT ---------------------- */
+/* ---------------------- DAILY GOALS ---------------------- */
+// 3 rotating quests/day, picked deterministically from the date and tracked as the DELTA in existing
+// Stats counters since the day's baseline. Pure reuse of the stat plumbing — no new tracking.
+const QUEST_POOL = [
+  { id:"pops",   stat:"pops",            amt:120, label:"Pop {n} fruit",            icon:"💥", coins:150 },
+  { id:"big",    stat:"bigPops",         amt:15,  label:"Pop {n} big fruit (5+)",   icon:"🎈", coins:150 },
+  { id:"chains", stat:"chainsCount",     amt:40,  label:"Make {n} chains",          icon:"🔗", coins:150 },
+  { id:"coins",  stat:"coinsEarned",     amt:600, label:"Earn {n} coins",           icon:"🪙", gems:1 },
+  { id:"levels", stat:"levelsCleared",   amt:3,   label:"Clear {n} levels",         icon:"🚀", coins:250 },
+  { id:"giant",  stat:"giantPops",       amt:5,   label:"Pop {n} giant fruit (10+)", icon:"💣", coins:250 },
+  { id:"stars",  stat:"threeStarClears", amt:1,   label:"Get a 3-star clear",       icon:"⭐", gems:1 },
+];
+function questDef(id) { return QUEST_POOL.find(q => q.id === id); }
+function ensureDailyQuests() {
+  const data = Save.load();
+  const today = todayISO();
+  if (data.dailyQuests && data.dailyQuests.date === today) return data.dailyQuests;
+  let seed = 0; for (const c of today) seed = (seed * 31 + c.charCodeAt(0)) & 0x7fffffff;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const pool = QUEST_POOL.slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const stats = data.stats || {};
+  data.dailyQuests = { date: today, quests: pool.slice(0, 3).map(q => ({ id: q.id, baseline: stats[q.stat] || 0, claimed: false })) };
+  Save.save(data);
+  return data.dailyQuests;
+}
+function questProgress(q) { const def = questDef(q.id); if (!def) return 0; return Math.max(0, ((Save.load().stats || {})[def.stat] || 0) - (q.baseline || 0)); }
+function dailyGoalsClaimable() { return ensureDailyQuests().quests.some(q => { const def = questDef(q.id); return def && !q.claimed && questProgress(q) >= def.amt; }); }
+function claimQuest(id) {
+  const data = Save.load(); const dq = data.dailyQuests; if (!dq) return;
+  const q = dq.quests.find(x => x.id === id); const def = questDef(id); if (!q || !def || q.claimed) return;
+  if (((data.stats || {})[def.stat] || 0) - (q.baseline || 0) < def.amt) return;
+  q.claimed = true;
+  if (def.coins) { data.coins = (data.coins || 0) + def.coins; if (data.stats) data.stats.coinsEarned = (data.stats.coinsEarned || 0) + def.coins; }
+  Save.save(data);
+  if (def.gems) gainGems(def.gems, "daily goal");
+  Sound.play("rainbow");
+  showBanner(`🗓️ Goal complete! ${def.coins ? "+" + def.coins + "🪙" : "+" + def.gems + "💎"}`);
+  updateCoinPill();
+  renderHomeGoalsCard();
+}
+function renderHomeGoalsCard() {
+  const card = document.getElementById("homeGoalsCard"); if (!card) return;
+  const dq = ensureDailyQuests();
+  let rows = "";
+  for (const q of dq.quests) {
+    const def = questDef(q.id); if (!def) continue;
+    const prog = Math.min(def.amt, questProgress(q)), done = prog >= def.amt;
+    const reward = def.coins ? `+${def.coins}🪙` : `+${def.gems}💎`;
+    let right;
+    if (q.claimed) right = `<span class="goalDone">✓</span>`;
+    else if (done) right = `<button class="goalClaim" data-quest="${q.id}">CLAIM ${reward}</button>`;
+    else right = `<span style="font-size:12px;opacity:.9;white-space:nowrap">${prog}/${def.amt}</span>`;
+    rows += `<div class="goalRow"><span class="gIcon">${def.icon}</span><span class="gBody">${def.label.replace("{n}", def.amt)}<div class="goalBar"><i style="width:${Math.round(prog / def.amt * 100)}%"></i></div></span>${right}</div>`;
+  }
+  card.innerHTML = `<div class="goalTitle">🗓️ DAILY GOALS</div>${rows}`;
+  card.querySelectorAll(".goalClaim").forEach(b => b.addEventListener("click", () => claimQuest(b.dataset.quest)));
+}
+
 function showHomeScreen() {
   document.getElementById("homeOverlay").classList.add("active");
   state.busy = true;
   tickDailyStreak();
   renderHomeStreakCard();
   renderHomeAfkCard();
+  renderHomeGoalsCard();
   renderHomeDailyCard();
   // Defer the daily check so the home screen has a frame to render first
   setTimeout(checkAndMaybeShowDaily, 250);
