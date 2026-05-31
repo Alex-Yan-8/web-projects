@@ -4167,11 +4167,15 @@ window.FruitWobbleIntro = (function () {
       const inPlay=now>=T.SMACK_OUT;
 
       let cam={fx:W/2,fy:H/2,scale:1};
+      // PRE_ZOOM is the gentle anticipation "creep" the main zoom continues FROM, so the scale
+      // never snaps back to 1.0 at BEAT. The creep and the zoom both ease with eInOut, so they
+      // meet at BEAT with matching VALUE (1.06) and matching VELOCITY (0) → C1-smooth, no hitch.
+      const PRE_ZOOM=1.06;
       if(lastRect&&now>=T.BEAT&&!inPlay){
         const tgt=camForZoom(lastRect), zp=eInOut(seg(now,T.BEAT,T.ZOOM_OUT));
-        cam.fx=W/2+(tgt.fx-W/2)*zp; cam.fy=H/2+(tgt.fy-H/2)*zp; cam.scale=1+(tgt.scale-1)*zp;
+        cam.fx=W/2+(tgt.fx-W/2)*zp; cam.fy=H/2+(tgt.fy-H/2)*zp; cam.scale=PRE_ZOOM+(tgt.scale-PRE_ZOOM)*zp;
         if(now>=T.ZOOM_OUT){ const sp=eInCubic(seg(now,T.ZOOM_OUT,T.SMACK_OUT)); cam.scale=tgt.scale*(1+sp*1.7); }
-      } else if(!inPlay&&now>=T.REVEAL_OUT){ cam.scale=1+seg(now,T.REVEAL_OUT,T.BEAT)*0.05; }
+      } else if(!inPlay&&now>=T.REVEAL_OUT){ cam.scale=1+eInOut(seg(now,T.REVEAL_OUT,T.BEAT))*(PRE_ZOOM-1); }
 
       const shx=(Math.random()*2-1)*shakeAmp, shy=(Math.random()*2-1)*shakeAmp;
       ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
@@ -4190,8 +4194,9 @@ window.FruitWobbleIntro = (function () {
           ctx.globalAlpha=0.25+0.25*Math.sin(now/600+mo.ph); ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(mo.x*W,yy,mo.r,0,Math.PI*2); ctx.fill(); }
         ctx.restore(); ctx.globalAlpha=1;
 
-        if(now>=T.BEAT){ const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.28,W/2,H/2,Math.max(W,H)*0.72);
-          v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(0,0,0,0.5)"); ctx.fillStyle=v; ctx.fillRect(0,0,W,H); }
+        if(now>=T.BEAT){ const vg=0.5*clamp01((now-T.BEAT)/300); // fade the vignette in over 300ms instead of popping on
+          const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.28,W/2,H/2,Math.max(W,H)*0.72);
+          v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(0,0,0,"+vg+")"); ctx.fillStyle=v; ctx.fillRect(0,0,W,H); }
         if(now>=T.ZOOM_OUT){ const sp=seg(now,T.ZOOM_OUT,T.SMACK_OUT);
           ctx.save(); ctx.globalAlpha=sp*0.7; ctx.strokeStyle="#fff"; ctx.lineWidth=2;
           for(let i=0;i<16;i++){ const a=i/16*Math.PI*2, r0=Math.min(W,H)*0.2*(1-sp), r1=Math.max(W,H);
