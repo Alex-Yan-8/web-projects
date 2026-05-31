@@ -4220,12 +4220,14 @@ const MAX_EFFECTIVE_SCALE = 5;
 // Overflow "jackpot": once the bowl's used area exceeds this (e.g. after spamming a grow power like
 // Orange), it's physically over-capacity and would squeeze/jitter — so the biggest fruit auto-bursts
 // for big points + shake until the bowl fits again. Must be > FRUIT_CAP so normal play never trips it.
-// --- FRENZY: a 5-second disco window with a ramping ×2→×5 score multiplier, triggered once per level
-// at the halfway mark (boss half-health). No auto-popping — just a reward window. ---
-const FRENZY_DURATION  = 5000; // ms of disco + multiplier
-const FRENZY_MULT_MIN  = 2;    // multiplier at the start of the frenzy…
-const FRENZY_MULT_MAX  = 5;    // …ramping up to this the more you score…
-const FRENZY_MULT_STEP = 0.25; // …by this much per scoring pop
+// --- FRENZY: disco window with a ramping score multiplier. Fires at score milestones (repeatable),
+// each one bigger; the more HYPE you bring into it, the higher it STARTS — so building Hype then
+// crossing a milestone is a chase-able combo. No auto-popping — just a reward window. ---
+const FRENZY_THRESHOLDS = [0.5, 0.8]; // fractions of the target where a frenzy fires (in order)
+const FRENZY_DURATION  = 5000; // base ms (each later frenzy adds 1.5s)
+const FRENZY_MULT_MIN  = 2;    // floor multiplier when entering with no Hype…
+const FRENZY_MULT_MAX  = 5;    // …base cap (each later frenzy raises it by 1)
+const FRENZY_MULT_STEP = 0.25; // ramp per scoring pop during the window
 // --- Difficulty: hard move cap + timed levels (a level can now be LOST, not just won) ---
 const MOVE_LIMIT_MULT = 2.5; // hard chain cap = ceil(parMoves × this). Run out before the target = fail.
                              //   Generous starting point (targets were tuned for unlimited moves) — tighten after playtest.
@@ -4845,7 +4847,8 @@ function startLevel(i, fromPlayer = false) {
   state.hype = 0;
   state.hypeLastPop = 0;
   state._maxHypeFired = false;
-  state._frenzyFired = false;
+  state._frenzyCount = 0;
+  state.frenzyMax = FRENZY_MULT_MAX;
   state.scoreScale = scoreScale(); // base-score factor × prestige multiplier (cached for the hot path)
   const _pr = (Save.load().prestigeRewards || {});
   state.hypeMax = HYPE_MAX + (_pr.hypeBonus || 0); // prestige can raise the Hype cap
@@ -5629,7 +5632,7 @@ function addScore(amount) {
   // lowered and scaled up by prestige (state.scoreScale, cached at level start — see startLevel).
   const sScale = state.scoreScale != null ? state.scoreScale : BASE_SCORE_FACTOR;
   amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * sScale * endlessMult * frenzy);
-  if (frenzy > 1) state.frenzyMult = Math.min(FRENZY_MULT_MAX, (state.frenzyMult || FRENZY_MULT_MIN) + FRENZY_MULT_STEP);
+  if (frenzy > 1) state.frenzyMult = Math.min(state.frenzyMax || FRENZY_MULT_MAX, (state.frenzyMult || FRENZY_MULT_MIN) + FRENZY_MULT_STEP);
   state.scoreAnimFrom = state.displayedScore;
   state.score += amount;
   state.scoreAnimTo = state.score;
@@ -7806,28 +7809,32 @@ function recordCollected(balls) {
 function frenzyActive() {
   return !!state.frenzyUntil && performance.now() < state.frenzyUntil;
 }
-// FRENZY = a 5-second disco window with a ramping ×2→×5 score multiplier. Triggered once per level at
-// the HALFWAY mark (on a boss, that's "boss at half health"). No auto-popping — it's purely a reward
-// window; the player keeps playing and racks up boosted score. Fired from checkMidLevelFrenzy().
-function triggerFrenzy() {
+// n = which frenzy this is (1st, 2nd…). Later frenzies last longer and cap higher; the multiplier
+// STARTS higher the more Hype you carried in — so build Hype, then cross a milestone for a huge launch.
+function triggerFrenzy(n) {
   if (frenzyActive()) return;
-  state.frenzyUntil = performance.now() + FRENZY_DURATION;
-  state.frenzyMult = FRENZY_MULT_MIN;
+  n = n || 1;
+  state.frenzyUntil = performance.now() + FRENZY_DURATION + (n - 1) * 1500;
+  state.frenzyMax = FRENZY_MULT_MAX + (n - 1);                       // ×5, then ×6…
+  // Hype-charged launch: full Hype starts the frenzy ~+2 above the floor.
+  state.frenzyMult = Math.min(state.frenzyMax, FRENZY_MULT_MIN + (state.hype || 0) * 2);
   document.body.classList.add("frenzy");
   const hud = document.getElementById("comboHud");
   if (hud) hud.dataset.mode = "frenzy";
-  showBanner("🌈 FRENZY!!! 🌈");
+  showBanner(n >= 2 ? "🌈🌈 SUPER FRENZY!! 🌈🌈" : "🌈 FRENZY!!! 🌈");
   Sound.play("rainbow");
-  shakeScreen(5, 500);
+  shakeScreen(4 + n, 500);
 }
-// Fire the frenzy once when the level is half-cleared (boss half-HP). Called from addScore.
+// Fire a frenzy each time the score crosses the next milestone (50%, then 80%). Called from addScore.
 function checkMidLevelFrenzy() {
-  if (state._frenzyFired || state.endless) return;
+  if (state.endless) return;
   const lv = LEVELS[state.level % LEVELS.length];
   if (!lv || !lv.targetScore) return;
-  if (state.score >= lv.targetScore * 0.5) {
-    state._frenzyFired = true;
-    triggerFrenzy();
+  const fired = state._frenzyCount || 0;
+  if (fired >= FRENZY_THRESHOLDS.length) return;
+  if (state.score >= lv.targetScore * FRENZY_THRESHOLDS[fired]) {
+    state._frenzyCount = fired + 1;
+    triggerFrenzy(fired + 1);
   }
 }
 // Run/expire the frenzy window + refresh its multiplier badge each frame.
