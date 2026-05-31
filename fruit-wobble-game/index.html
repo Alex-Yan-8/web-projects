@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Fruit Wobble</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -542,7 +542,9 @@
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
     align-items: center;
-    padding: 12px 14px 10px;
+    /* Safe-area aware: 0 on desktop (env resolves to 0), expands past the notch/home-indicator
+       on mobile so the HUD/boosters never sit under device chrome. */
+    padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
     gap: 10px;
     --shake-amp: 4px;
   }
@@ -1630,7 +1632,11 @@
 
   /* Clear glass fruit jar — translucent so the world theme glows through it */
   #jar-wrap {
-    width: min(92vw, 540px);
+    /* Size the (square) jar by BOTH width and the height left after the header, panels, boosters,
+       gaps and padding (~260px) — so the whole fixed-height gameplay column always fits the
+       viewport and nothing clips. dvh override keeps it correct under mobile browser chrome. */
+    width: min(92vw, calc(100vh - 260px), 540px);
+    width: min(92vw, calc(100dvh - 260px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 540px);
     aspect-ratio: 1 / 1;
     position: relative;
     background:
@@ -2846,11 +2852,9 @@
   .lvNode .nodeBest.good { color: #2c8a2a; }
 
   /* ===================== RESPONSIVE ===================== */
-  /* Short viewports (landscape phones, small laptops): cap basket so header+panels+basket fit */
+  /* Short viewports (landscape phones, small laptops): the jar already shrinks to fit via its
+     height-aware width above — here we just tighten the surrounding spacing to claw back room. */
   @media (max-height: 720px) {
-    #basketArea, #jar-wrap {
-      width: min(calc(100vh - 230px), 540px);
-    }
     #playColumn { gap: 5px; }
     #app { padding: 6px 10px 6px; gap: 6px; }
   }
