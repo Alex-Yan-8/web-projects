@@ -1634,8 +1634,6 @@
     aspect-ratio: 1 / 1;
     position: relative;
     background:
-      /* top-rim specular arc — a bright glass catch-light along the upper edge */
-      radial-gradient(ellipse 58% 16% at 50% 6%, rgba(255,255,255,0.55) 0 30%, rgba(255,255,255,0.12) 60%, transparent 78%),
       /* curved glass shine streaks */
       linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.38) 40%, rgba(255,255,255,0) 47%),
       linear-gradient(118deg, rgba(255,255,255,0) 58%, rgba(255,255,255,0.16) 64%, rgba(255,255,255,0) 69%),
@@ -1656,14 +1654,9 @@
     top: 2.5%; left: 14%; right: 14%;
     height: 7%;
     border-radius: 50%;
-    background:
-      /* bright outer rim of the glass mouth */
-      radial-gradient(ellipse 100% 100% at 50% 38%,
-        rgba(255,255,255,0) 50%, rgba(255,255,255,0.5) 68%, rgba(255,255,255,0.12) 84%, rgba(255,255,255,0) 100%),
-      /* shaded inner lip — the inside of the mouth, giving the opening real depth */
-      radial-gradient(ellipse 90% 130% at 50% 82%,
-        rgba(60,100,130,0.34) 0 38%, rgba(60,100,130,0.10) 64%, transparent 80%);
-    box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(55,95,128,0.38);
+    background: radial-gradient(ellipse 100% 100% at 50% 45%,
+      rgba(255,255,255,0) 52%, rgba(255,255,255,0.45) 70%, rgba(255,255,255,0.12) 86%, rgba(255,255,255,0) 100%);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
     pointer-events: none;
     z-index: 3;
   }
@@ -7021,12 +7014,12 @@ function physicsTick(dt) {
     if (state.chain.includes(b)) continue;
     if (Math.abs(b.squash) > 0.05) continue;
     if (Math.abs(b.vx) + Math.abs(b.vy) > 60) continue;
-    if (b.nextWobbleAt == null) b.nextWobbleAt = nowMs + Math.random() * 5000;
+    if (b.nextWobbleAt == null) b.nextWobbleAt = nowMs + Math.random() * 9000;
     if (nowMs > b.nextWobbleAt) {
-      b.squash = 0.04;
+      b.squash = 0.03;
       b.squashAngle = Math.PI / 2; // vertical squat — feels like a breath
       b.squashVel = 0;
-      b.nextWobbleAt = nowMs + 5000 + Math.random() * 7000;
+      b.nextWobbleAt = nowMs + 9000 + Math.random() * 9000; // rarer so the board reads calm at rest
     }
   }
 
@@ -7234,9 +7227,14 @@ function drawBall(b) {
   }
 
   // ----- transform into squash-space and draw the ball -----
+  // rotate(ang)·scale·rotate(-ang) is a DIRECTIONAL squash: the circle still deforms into an
+  // ellipse along `ang`, but the local frame stays screen-aligned — so the highlight/specular
+  // (all drawn upper-right in local space) stays anchored to the light source instead of
+  // swinging around the ball as the squash axis changes. Kills the resting-fruit "shimmer".
   ctx2d.translate(b.x, b.y);
   ctx2d.rotate(ang);
   ctx2d.scale(sqAlong, sqPerp);
+  ctx2d.rotate(-ang);
 
   // selection / merged glow (drawn through transform; using shadowBlur which is in screen space)
   if (inChain) {
