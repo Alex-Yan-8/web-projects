@@ -4051,6 +4051,7 @@ window.FruitWobbleIntro = (function () {
 
     function doComplete(){
       if(completed) return; completed=true;
+      cv.style.pointerEvents="none"; // stop the (still-visible) canvas swallowing taps on the revealed menu
       skipBtn.classList.remove("show"); skipBtn.style.pointerEvents="none";
       window.removeEventListener("pointerdown", onTapSkip, true);
       flash.style.transition="none"; flash.style.opacity="1";
@@ -4062,6 +4063,7 @@ window.FruitWobbleIntro = (function () {
       if(finished) return; finished=true;
       cancelAnimationFrame(rafId); rafId=0;
       cv.style.display="none";
+      destroy(); // fully tear down (remove canvas/flash/skip + window/document listeners) — no leak
     }
 
     function frame(t){
@@ -4295,6 +4297,10 @@ const Save = (() => {
       seasonXp: 0,
       seasonClaimed: [],
       prestige: 0,
+      prestigePower: 0,        // banked stars driving the prestige score multiplier
+      bankedStars: 0,          // high-water mark of stars already banked (no re-banking)
+      prestigeRewards: {},     // permanent per-prestige unlocks (gacha, fruits, hype cap…)
+      featureTuts: {},         // which one-time feature tutorials have been shown
       tournament: null,
       gems: 0,
       streakDay: 0,
@@ -4383,6 +4389,10 @@ const Save = (() => {
       if (typeof obj.seasonXp !== "number") obj.seasonXp = 0;
       if (!Array.isArray(obj.seasonClaimed)) obj.seasonClaimed = [];
       if (typeof obj.prestige !== "number") obj.prestige = 0;
+      if (typeof obj.prestigePower !== "number") obj.prestigePower = 0;
+      if (typeof obj.bankedStars !== "number") obj.bankedStars = 0;
+      if (typeof obj.prestigeRewards !== "object" || !obj.prestigeRewards) obj.prestigeRewards = {};
+      if (typeof obj.featureTuts !== "object" || !obj.featureTuts) obj.featureTuts = {};
       if (obj.tournament === undefined) obj.tournament = null;
       if (typeof obj.gems !== "number") obj.gems = 0;
       if (typeof obj.streakDay !== "number") obj.streakDay = 0;
@@ -4797,7 +4807,9 @@ function startLevel(i, fromPlayer = false) {
   state.hypeMax = HYPE_MAX + (_pr.hypeBonus || 0); // prestige can raise the Hype cap
   state.frenzyUntil = 0;
   state.frenzyMult = 1;
+  state.tutPaused = false;
   document.body.classList.remove("frenzy");
+  const _ftO = document.getElementById("featureTutOverlay"); if (_ftO) _ftO.classList.remove("active");
   const _ch = document.getElementById("comboHud"); if (_ch) { _ch.innerHTML = ""; _ch.dataset.mode = ""; }
   document.getElementById("levelTag").textContent = "Level " + (i + 1);
   if (lv.boss) {
@@ -7860,7 +7872,7 @@ function levelFailed(reason) {
 // animations and overlays (state.busy) so you're never penalised for animation time. Fails at zero.
 function tickLevelTimer(dt) {
   if (state.endless || !state.timeLimit) return;
-  if (state.busy || !state.levelInProgress || state._completed || state._failed || state.gameOver) return;
+  if (state.busy || state.tutPaused || !state.levelInProgress || state._completed || state._failed || state.gameOver) return;
   state.timeLeft = Math.max(0, (state.timeLeft || 0) - dt);
   const sec = Math.ceil(state.timeLeft);
   if (sec !== state._lastTimerSec) {  // refresh the HUD ~once per second, not every frame
@@ -8178,6 +8190,7 @@ function levelComplete() {
   if (prevBestMoves == null || state.moveCount < prevBestMoves) {
     data.bestMoves[state.level] = state.moveCount;
   }
+  const replay = (data.stars[state.level] || 0) > 0; // was this level already cleared before?
   if (stars > (data.stars[state.level] || 0)) data.stars[state.level] = stars;
   const nextLevel = Math.min(LEVELS.length - 1, state.level + 1);
   if (nextLevel > data.unlocked) data.unlocked = nextLevel;
@@ -8187,6 +8200,8 @@ function levelComplete() {
   const levelScale = 1 + 0.06 * state.level;
   const coinMult = upgVal("coinRate") * petBonus("coin") * (state.eventMode === "coin" ? 2 : 1) * prestigeBonus();
   let coinsEarned = Math.round((50 + 25 * stars + (lv.boss ? 125 : 0)) * levelScale * coinMult);
+  // Re-clearing an already-beaten level pays only 30% — closes a zero-cost coin farm.
+  if (replay) coinsEarned = Math.round(coinsEarned * 0.3);
   // First event clear of the day → 200🪙 bonus chest
   let eventBonus = 0;
   if (state.eventMode && data.lastEventDate !== _todayStr()) {
@@ -9204,15 +9219,15 @@ function showFeatureTutorial(key) {
   document.getElementById("featureTutIcon").textContent = t.icon;
   document.getElementById("featureTutTitle").textContent = t.title;
   document.getElementById("featureTutBody").innerHTML = t.body;
-  // Pause input while teaching (physics keeps running behind it); restore on dismiss.
-  state._tutPrevBusy = state.busy;
-  state.busy = true;
+  // The full-screen overlay already blocks board taps, so we DON'T touch state.busy (doing so could
+  // restore a stale value and soft-lock). We just pause the level timer while the player reads.
+  state.tutPaused = true;
   overlay.classList.add("active");
   Sound.play("rainbow");
 }
 document.getElementById("featureTutOkBtn").addEventListener("click", () => {
   document.getElementById("featureTutOverlay").classList.remove("active");
-  state.busy = !!state._tutPrevBusy; // restore the prior input state
+  state.tutPaused = false;
 });
 // Detect new mechanics on the board and explain each the first time it appears (one at a time).
 function checkBoardTutorials() {
@@ -10181,7 +10196,10 @@ let lastT = 0;
 function frame(now) {
   if (state.gameOver) return;
   if (!lastT) lastT = now;
-  const dt = (now - lastT) / 1000;
+  // Clamp dt: a backgrounded tab throttles rAF, so the first frame back can be many seconds.
+  // Without this, that whole gap is subtracted from the level timer at once → an instant unfair
+  // "Time's up!" loss (and a wasted life). Cap it so at most ~0.1s passes per frame.
+  const dt = Math.min((now - lastT) / 1000, 0.1);
   lastT = now;
 
   physicsTick(dt);
