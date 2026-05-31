@@ -512,6 +512,28 @@
     z-index: 0;
   }
 
+  /* Film-grain de-band layer — a faint static noise tile over the gradients kills the
+     visible banding in the big radial/linear world skies. Static (no animation), 5% via
+     overlay blend, below content. */
+  #grain {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+
+  /* World-swap cross-fade — a soft light veil flashed (then faded) only when the world
+     actually changes, so the hard background-gradient cut reads as a gentle transition.
+     Sits below content (z-index 1 wins by DOM order), so the jar/HUD never flash. */
+  #sceneFade {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(ellipse 120% 90% at 50% 38%, rgba(255,255,255,0.55), rgba(255,255,255,0.12));
+  }
+
   /* All real content sits above the scene */
   body > * { position: relative; z-index: 1; }
 
@@ -3434,6 +3456,8 @@
 <body>
 
 <div id="worldFx"></div>
+<div id="grain"></div>
+<div id="sceneFade"></div>
 <div id="vignette"></div>
 
 <div id="app">
@@ -4828,8 +4852,12 @@ function startLevel(i, fromPlayer = false) {
     state._endlessOver = false;
   }
   if (!state._startingEvent) state.eventMode = null;
-  // Per-world background swap — sky + midground + foreground all driven by [data-world]
-  document.body.setAttribute("data-world", worldOfLevel(i));
+  // Per-world background swap — sky + midground + foreground all driven by [data-world].
+  // Cross-fade the hard gradient cut, but only when the world actually changes.
+  const _newWorld = worldOfLevel(i);
+  const _prevWorld = document.body.getAttribute("data-world");
+  document.body.setAttribute("data-world", _newWorld);
+  if (_prevWorld != null && String(_prevWorld) !== String(_newWorld)) flashSceneFade();
   // levelInProgress = the player is actively committed to this level. False for
   // boot-time background renders so leaving without playing doesn't cost a life.
   state.levelInProgress = !!fromPlayer;
@@ -10294,6 +10322,19 @@ function frame(now) {
 }
 
 /* ---------------------- BOOT ---------------------- */
+// Soft white veil flashed over the background on a world change, then faded out (~0.55s),
+// so the gradient swap reads as a transition instead of a hard cut.
+function flashSceneFade() {
+  const el = document.getElementById("sceneFade");
+  if (!el) return;
+  el.style.transition = "none";
+  el.style.opacity = "0.45";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.transition = "opacity 0.55s ease";
+    el.style.opacity = "0";
+  }));
+}
+
 /* ---------------------- DAILY GOALS ---------------------- */
 // 3 rotating quests/day, picked deterministically from the date and tracked as the DELTA in existing
 // Stats counters since the day's baseline. Pure reuse of the stat plumbing — no new tracking.
