@@ -3442,9 +3442,10 @@
   }
   .fw-intro-skip.show { opacity: .85; pointer-events: auto; }
 
-  /* Smooth overlay reveals — fade the backdrop in (display can't transition, so animate opacity) */
-  [id$="Overlay"].active, #overlay.active { animation: fwFadeIn .24s ease both; }
-  @keyframes fwFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  /* Screens swap INSTANTLY (no opacity fade-in). The old fwFadeIn faded each overlay up from
+     opacity:0, but the outgoing screen is removed instantly — so during the fade the gameplay
+     board behind showed through ("jar flashes then the screen appears"). Modals keep their own
+     card pop-in animations, so this only removes the board-revealing backdrop fade. */
 
   /* Respect reduced-motion: stop the perpetual world FX + frenzy hue churn (perf + accessibility) */
   @media (prefers-reduced-motion: reduce) {
@@ -10498,13 +10499,10 @@ function boot() {
   // Background level renders behind the home screen for a sneak peek of gameplay
   startLevel(Math.min(data.unlocked, LEVELS.length - 1));
   requestAnimationFrame(frame);
-  // App-open intro animation — plays once per tab session (reloads while testing skip it), then
-  // reveals the home screen. Skippable (tap / SKIP button). Falls back to the home if unavailable.
-  let introSeen = false;
-  try { introSeen = sessionStorage.getItem("fwIntroSeen") === "1"; } catch (e) {}
-  if (window.FruitWobbleIntro && !introSeen) {
+  // App-open intro animation — plays on EVERY load, then reveals the home screen.
+  // Skippable (tap / SKIP button). Falls back straight to home if the module is unavailable.
+  if (window.FruitWobbleIntro) {
     try {
-      try { sessionStorage.setItem("fwIntroSeen", "1"); } catch (e) {}
       FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted }).play();
     } catch (e) {
       console.error("intro failed, showing home", e);
