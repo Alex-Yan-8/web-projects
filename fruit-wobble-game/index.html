@@ -1747,6 +1747,15 @@
     z-index: 50;
   }
   #overlay.active { display: flex; }
+  /* Feature-unlock tutorial popup — sits above everything (z 90) so it shows over any menu */
+  #featureTutOverlay {
+    position: fixed; inset: 0;
+    background: rgba(20,30,60,0.6);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 90;
+  }
+  #featureTutOverlay.active { display: flex; }
   .overlayCard {
     background: linear-gradient(180deg, #ffffff, #f0f6ff);
     border: 4px solid #fff;
@@ -3211,6 +3220,11 @@
     background: rgba(120,140,180,0.12);
     border-radius: 10px;
   }
+  .gachaSkipRow {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding: 4px 6px;
+    font-size: 13px; font-weight: 800; color: #4a5670;
+  }
   .gachaSpinBtn.premium {
     background: linear-gradient(180deg, #fff0a0 0%, #ffd64a 35%, #d8a020 100%);
     border-color: #fff8d0;
@@ -3423,9 +3437,9 @@
         <span class="bIcon">⚡</span>
         <span class="bCost">50</span>
       </button>
-      <button class="boosterIcon skipBoosterBtn" data-booster="skip" type="button" title="Skip this level (1 star, no coin reward)">
+      <button class="boosterIcon skipBoosterBtn" data-booster="skip" type="button" title="Skip this level (free — 1 star, no coin reward)">
         <span class="bIcon">⏭️</span>
-        <span class="bCost gemCost">0</span>
+        <span class="bCost">FREE</span>
       </button>
     </div>
   </div>
@@ -3461,6 +3475,7 @@
     <h2>Select a Level</h2>
     <div class="hubSubBar">
       <button class="loadoutOpenBtn" id="loadoutOpenBtn" type="button">🧺 Edit Loadout</button>
+      <button class="loadoutOpenBtn" id="skipWorldBtn" type="button">⏩ Skip World · 8💎</button>
     </div>
     <div class="levelMap" id="levelMap"></div>
   </div>
@@ -3644,23 +3659,11 @@
       <div style="width:38px; flex-shrink:0;"></div>
     </div>
     <div class="settingsList">
-      <div class="settingsSection">
-        <div class="settingsSectionTitle">🧺 Fruit Loadout</div>
-        <div class="settingsSectionHint">Choose which fruits appear in your puzzle (min 2)</div>
-        <div class="loadoutChips" id="loadoutChips"></div>
-      </div>
       <div class="settingsRow">
         <span class="settingsLabel">🔊 Sound Effects</span>
         <button class="settingsToggle" id="settingsSoundToggle" type="button">
           <span class="settingsToggleKnob"></span>
           <span class="settingsToggleText" id="settingsSoundLabel">ON</span>
-        </button>
-      </div>
-      <div class="settingsRow">
-        <span class="settingsLabel">⏩ Skip Gacha Animations</span>
-        <button class="settingsToggle" id="settingsSkipGachaToggle" type="button">
-          <span class="settingsToggleKnob"></span>
-          <span class="settingsToggleText" id="settingsSkipGachaLabel">OFF</span>
         </button>
       </div>
       <div class="settingsRow">
@@ -3747,6 +3750,13 @@
     <button class="gachaSpinBtn tenpull" id="gachaHundredPullBtn" type="button">100× PULL — 8000 🪙</button>
     <button class="gachaSpinBtn premium" id="gachaPremiumBtn" type="button">PREMIUM — 1000 🪙</button>
     <div class="gachaPityRow" id="gachaPityRow"></div>
+    <div class="gachaSkipRow">
+      <span>⏩ Skip pull animations</span>
+      <button class="settingsToggle" id="gachaSkipToggle" type="button">
+        <span class="settingsToggleKnob"></span>
+        <span class="settingsToggleText" id="gachaSkipLabel">OFF</span>
+      </button>
+    </div>
     <div class="collectionGrid" id="collectionGrid"></div>
   </div>
 </div>
@@ -3764,25 +3774,44 @@
 <div id="tutorialOverlay">
   <div class="overlayCard tutorialCard">
     <div class="tutStep" data-step="0">
-      <div class="tutBig">🍎🍎🍎</div>
-      <h2>Drag to Chain</h2>
-      <p>Drag across 3+ same-colored fruits to merge them into a bigger fruit.</p>
+      <div class="tutBig">🎯</div>
+      <h2>The Goal</h2>
+      <p>Fill the <b>score bar</b> to the target before you run out of <b>moves</b>. Do it by merging and popping fruit. Here's how 👇</p>
     </div>
     <div class="tutStep" data-step="1" hidden>
-      <div class="tutBig">👆 🍎</div>
-      <h2>Tap to Pop</h2>
-      <p>Tap a merged fruit to pop it for points. Bigger fruits score way more!</p>
+      <div class="tutBig">🍎🍎🍎</div>
+      <h2>1 · Drag to Merge</h2>
+      <p>Drag across <b>3 or more fruit of the SAME color</b>. They combine into one <b>bigger fruit</b> where your drag ends. (Each drag is one move.)</p>
     </div>
     <div class="tutStep" data-step="2" hidden>
-      <div class="tutBig">⚡ 🍊</div>
-      <h2>Use Your Powers</h2>
-      <p>Popping fills the power meters above. Tap a charged power for a big bonus.</p>
+      <div class="tutBig">👆💥</div>
+      <h2>2 · Tap to Pop</h2>
+      <p>Tap a <b>merged (bigger) fruit</b> to pop it for points. The <b>bigger</b> the fruit, the <b>way more</b> it scores — so merge big before you pop!</p>
+    </div>
+    <div class="tutStep" data-step="3" hidden>
+      <div class="tutBig">⚡🔥</div>
+      <h2>3 · Build HYPE</h2>
+      <p>Every pop fills your <b>HYPE multiplier</b> (top of screen). Keep popping to ramp it up to <b>×5</b> — it multiplies ALL your points. It drains if you stop, so keep the combo rolling!</p>
+    </div>
+    <div class="tutStep" data-step="4" hidden>
+      <div class="tutBig">🍊✨</div>
+      <h2>4 · Fire Powers</h2>
+      <p>Popping also charges the <b>power icons</b> above the jar. When one glows, <b>tap it</b> for a big effect (grow fruit, bombs, score, and more).</p>
     </div>
     <div class="tutDots" id="tutDots"></div>
     <div class="btnRow">
       <button class="nextBtn altBtn" id="tutPrevBtn">← Back</button>
       <button class="nextBtn" id="tutNextBtn">Next →</button>
     </div>
+  </div>
+</div>
+
+<div id="featureTutOverlay">
+  <div class="overlayCard">
+    <div class="bigEmoji" id="featureTutIcon">🎉</div>
+    <h2 id="featureTutTitle">New Feature</h2>
+    <p id="featureTutBody" style="font-size:15px; line-height:1.5; max-width:340px; margin:6px auto 16px;">…</p>
+    <button class="nextBtn" id="featureTutOkBtn">Got it!</button>
   </div>
 </div>
 
@@ -4415,10 +4444,13 @@ function startLevel(i, fromPlayer = false) {
   state.timeLimit = noFail ? 0 : (lv.timeLimit != null ? lv.timeLimit : (lv.boss ? BOSS_TIME_BASE + i * 3 : 0));
   state.timeLeft = state.timeLimit;
   state._lastTimerSec = -1;
-  // Reset Hype meter + the once-per-level frenzy
+  // Reset Hype meter + the once-per-level frenzy; cache prestige-derived scoring values for this level
   state.hype = 0;
   state.hypeLastPop = 0;
   state._frenzyFired = false;
+  state.scoreScale = scoreScale(); // base-score factor × prestige multiplier (cached for the hot path)
+  const _pr = (Save.load().prestigeRewards || {});
+  state.hypeMax = HYPE_MAX + (_pr.hypeBonus || 0); // prestige can raise the Hype cap
   state.frenzyUntil = 0;
   state.frenzyMult = 1;
   document.body.classList.remove("frenzy");
@@ -4434,6 +4466,15 @@ function startLevel(i, fromPlayer = false) {
   renderPowerRow();
   applyPetBadge();
   initBoard();
+  if (fromPlayer) {
+    // New-world arrival banner (every 5th level starts a new world theme).
+    if (i > 0 && i % 5 === 0) {
+      const w = WORLDS[worldOfLevel(i) - 1];
+      if (w) setTimeout(() => showBanner(`${w.emoji} ${w.name}!`), 500);
+    }
+    // Explain any new mechanic on this board (boss / frozen / explosive / rock / star), once each.
+    setTimeout(checkBoardTutorials, 800);
+  }
 }
 
 /* ---------------------- UI RENDERING ---------------------- */
@@ -5174,7 +5215,7 @@ const HYPE_MAX   = 5;    // max score multiplier at a full meter
 const HYPE_GRACE = 600;  // ms after a pop before the meter starts to drain
 const HYPE_DECAY = 0.32; // meter (0..1) lost per second when idle (~3s from full → empty)
 function hypeGain(size) { return Math.min(0.18, 0.03 + size * 0.007); } // per-pop gain, scaled by fruit size
-function hypeMult() { return 1 + (state.hype || 0) * (HYPE_MAX - 1); }
+function hypeMult() { return 1 + (state.hype || 0) * ((state.hypeMax || HYPE_MAX) - 1); } // cap can be raised by prestige
 // Legacy rapid-merge combo — kept only for the biggestCombo stat + animal cheers; no longer scores.
 function comboMult() { return 1.0; }
 function addScore(amount) {
@@ -5184,8 +5225,10 @@ function addScore(amount) {
   const endlessMult = state.endless ? 1.5 : 1.0;
   // FRENZY: ×2→×5 during the 5s disco window, ramping up the more you score.
   const frenzy = (state.frenzyUntil && performance.now() < state.frenzyUntil) ? (state.frenzyMult || FRENZY_MULT_MIN) : 1;
-  // HYPE meter is the main multiplier now (built by pops); frenzy stacks on top.
-  amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * prestigeBonus() * endlessMult * frenzy);
+  // HYPE meter is the main multiplier now (built by pops); frenzy stacks on top. Base scoring is
+  // lowered and scaled up by prestige (state.scoreScale, cached at level start — see startLevel).
+  const sScale = state.scoreScale != null ? state.scoreScale : BASE_SCORE_FACTOR;
+  amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * sScale * endlessMult * frenzy);
   if (frenzy > 1) state.frenzyMult = Math.min(FRENZY_MULT_MAX, (state.frenzyMult || FRENZY_MULT_MIN) + FRENZY_MULT_STEP);
   state.scoreAnimFrom = state.displayedScore;
   state.score += amount;
@@ -5856,8 +5899,61 @@ function awardLegendaryPulls(n) {
 
 /* ---------------------- PRESTIGE ---------------------- */
 function prestigeBonus() {
+  // Coin prestige bonus — kept gentle (additive) so high-prestige coin income doesn't explode.
   return 1 + 0.25 * ((Save.load().prestige || 0));
 }
+// SCORE engine: base scoring is lowered (soft wall) and PRESTIGE multiplies it up, driven by the
+// STARS you bank. prestigePower = total banked stars; each is worth +2% permanent score.
+const BASE_SCORE_FACTOR      = 0.8;  // all scoring ×this before any prestige (a SOFT wall; ~1st prestige restores it)
+const PRESTIGE_PER_STAR      = 0.02; // each banked ⭐ = +2% permanent score multiplier
+const PRESTIGE_MIN_NEW_STARS = 12;   // new stars (earned since your last prestige) needed to prestige
+function scoreScale() {
+  return BASE_SCORE_FACTOR * (1 + (Save.load().prestigePower || 0) * PRESTIGE_PER_STAR);
+}
+// Star-based prestige: you bank the NEW stars earned since last prestige (high-water mark in
+// bankedStars), so you must push to fresh levels to grow your multiplier — no re-banking old stars.
+function prestigeNewStars() {
+  return Math.max(0, totalStars() - (Save.load().bankedStars || 0));
+}
+function canPrestigeNow() {
+  return prestigeNewStars() >= PRESTIGE_MIN_NEW_STARS;
+}
+// Each prestige UNLOCKS something (keyed by the new prestige level). These survive future resets.
+const PRESTIGE_REWARDS = {
+  1: { kind: "gacha",                   label: "🎰 GACHA UNLOCKED!",          tut: "gacha" },
+  2: { kind: "pet",   id: "dog",        label: "🐶 Free companion: Sandy!" },
+  3: { kind: "hype",  amount: 1,        label: "⚡ Hype cap raised to ×6!" },
+  4: { kind: "fruit", id: "strawberry", label: "🍓 Free fruit: Strawberry!" },
+  5: { kind: "hype",  amount: 1,        label: "⚡ Hype cap raised to ×7!" }
+};
+function prestigeUnlocksNext() {  // what the NEXT prestige will grant (for the prestige screen)
+  const p = (Save.load().prestige || 0) + 1;
+  return PRESTIGE_REWARDS[p] || null;
+}
+function gachaUnlocked() {
+  const data = Save.load();
+  return (data.prestige || 0) >= 1 || !!(data.prestigeRewards && data.prestigeRewards.gacha);
+}
+// Apply a prestige reward to the save object (caller saves). Returns the reward for the announcement.
+function grantPrestigeReward(data, p) {
+  const r = PRESTIGE_REWARDS[p];
+  if (!r) return null;
+  if (!data.prestigeRewards) data.prestigeRewards = {};
+  if (r.kind === "gacha") {
+    data.prestigeRewards.gacha = true;
+  } else if (r.kind === "pet") {
+    if (!data.pet) data.pet = { equipped: null, owned: [] };
+    if (!data.pet.owned.includes(r.id)) data.pet.owned.push(r.id);
+  } else if (r.kind === "hype") {
+    data.prestigeRewards.hypeBonus = (data.prestigeRewards.hypeBonus || 0) + r.amount;
+  } else if (r.kind === "fruit") {
+    if (!data.prestigeRewards.fruits) data.prestigeRewards.fruits = [];
+    if (!data.prestigeRewards.fruits.includes(r.id)) data.prestigeRewards.fruits.push(r.id);
+    data.tiers[r.id] = Math.max(1, data.tiers[r.id] || 0);
+  }
+  return r;
+}
+
 function showPrestige() {
   document.getElementById("prestigeOverlay").classList.add("active");
   renderPrestige();
@@ -5868,40 +5964,50 @@ function hidePrestige() {
 }
 function renderPrestige() {
   const data = Save.load();
-  const canPrestige = (data.unlocked || 0) >= LEVELS.length - 1;
+  const can = canPrestigeNow();
+  const newStars = prestigeNewStars();
+  const power = data.prestigePower || 0;
+  const curMult = (1 + power * PRESTIGE_PER_STAR).toFixed(2);
   const status = document.getElementById("prestigeStatus");
-  const bonus = ((prestigeBonus() - 1) * 100).toFixed(0);
-  status.innerHTML = `Current Prestige: <b>${data.prestige || 0}</b><br><span style="color:#708096; font-weight:700; font-size:14px;">Bonus: +${bonus}% coins & score</span><br><br>` +
-    (canPrestige
-      ? `<span style="color:#5a4007; font-size:14px;">Ready to prestige! Clearing all 30 levels unlocks the reset.</span>`
-      : `<span style="color:#a0aabd; font-size:14px;">Clear all ${LEVELS.length} levels first. (Currently ${data.unlocked + 1}/${LEVELS.length} unlocked)</span>`);
+  const next = prestigeUnlocksNext();
+  const unlockLine = next ? `<br><span style="color:#c0392b; font-weight:800; font-size:14px;">Next prestige unlocks: ${next.label}</span>` : "";
+  status.innerHTML = `Prestige <b>${data.prestige || 0}</b> · Score <b>×${curMult}</b> <span style="color:#708096; font-weight:700;">(${power}⭐ banked)</span>${unlockLine}<br><br>` +
+    (can
+      ? `<span style="color:#5a4007; font-size:14px;">Ready! Bank <b>${newStars}⭐</b> → <b>+${Math.round(newStars * PRESTIGE_PER_STAR * 100)}%</b> permanent score, and drop back just 5 levels.</span>`
+      : `<span style="color:#a0aabd; font-size:14px;">Earn <b>${PRESTIGE_MIN_NEW_STARS - newStars}</b> more ⭐ to prestige. (${newStars}/${PRESTIGE_MIN_NEW_STARS} new stars)</span>`);
   const btn = document.getElementById("prestigeBtn");
-  btn.disabled = !canPrestige;
-  btn.style.opacity = canPrestige ? "1" : "0.5";
+  btn.disabled = !can;
+  btn.style.opacity = can ? "1" : "0.5";
 }
 function doPrestige() {
   const data = Save.load();
-  if ((data.unlocked || 0) < LEVELS.length - 1) return;
-  if (!confirm("Reset all level progress, coins, upgrades, and pulls?\nYou keep cosmetics, pets, achievements, season pass.\n\nGain +25% permanent bonus.")) return;
-  // Reset what prestige takes
+  if (!canPrestigeNow()) return;
+  const newStars = prestigeNewStars();
+  const _next = prestigeUnlocksNext();
+  if (!confirm(`Bank ${newStars}⭐ for +${Math.round(newStars * PRESTIGE_PER_STAR * 100)}% permanent score?\n\nYou drop back only 5 levels and KEEP everything else (coins, upgrades, fruits, gacha).${_next ? "\nAlso unlocks: " + _next.label : ""}`)) return;
   data.prestige = (data.prestige || 0) + 1;
-  data.unlocked = 0;
-  data.best = [];
-  data.bestMoves = [];
-  data.stars = [];
-  data.coins = 0;
-  data.pieces = { apple: 0, banana: 0, grape: 0, orange: 0,
-                  strawberry: 0, cherry: 0, kiwi: 0, mango: 0, coconut: 0, blueberry: 0 };
-  data.tiers  = { apple: 1, banana: 1, grape: 1, orange: 1,
-                  strawberry: 0, cherry: 0, kiwi: 0, mango: 0, coconut: 0, blueberry: 0 };
-  data.upgrades = { coinRate: 0, afkRate: 0, pullDiscount: 0, maxLives: 0, lifeRegen: 0, boosterDiscount: 0, powerCharge: 0 };
-  data.pityCounter = 0;
-  data.pullCount = 0;
-  data.lastPull = null;
+  // Bank the NEW stars into permanent prestige power (high-water mark prevents re-banking old stars).
+  data.prestigePower = (data.prestigePower || 0) + newStars;
+  data.bankedStars = totalStars();
+  // Gentle setback: drop back only 5 levels; keep coins, upgrades, fruits, and everything else.
+  data.unlocked = Math.max(0, (data.unlocked || 0) - 5);
+  // Re-apply permanent fruit unlocks + grant THIS prestige's reward (unlocks keyed by prestige count).
+  const pr = data.prestigeRewards || {};
+  if (pr.fruits) for (const f of pr.fruits) data.tiers[f] = Math.max(1, data.tiers[f] || 0);
+  const reward = grantPrestigeReward(data, data.prestige);
   Save.save(data);
-  showBanner(`✨ PRESTIGE ${data.prestige}!`);
+  showBanner(`✨ PRESTIGE ${data.prestige}! +${newStars}⭐ banked`);
   renderPrestige();
   if (typeof updateCoinPill === "function") updateCoinPill();
+  if (typeof updateGemPill === "function") updateGemPill();
+  // Announce the unlock (and fire its tutorial, e.g. gacha) a beat later so it doesn't collide.
+  if (reward) setTimeout(() => announcePrestigeReward(reward), 1100);
+}
+// Show the prestige reward + trigger any feature tutorial it unlocks.
+function announcePrestigeReward(reward) {
+  showBanner(reward.label);
+  Sound.play("rainbow");
+  if (reward.tut) setTimeout(() => showFeatureTutorial(reward.tut), 1200);
 }
 
 /* ---------------------- COMPANION PETS ---------------------- */
@@ -7134,6 +7240,7 @@ function spawnPowerupBall(dropAt) {
     lockCount: 0,
     nextWobbleAt: performance.now() + 5000,
   });
+  setTimeout(checkBoardTutorials, 300); // first power star → explain it once
 }
 
 // Helper: visually fling the "consumed" fruits toward the survivor, then pop them.
@@ -7448,6 +7555,7 @@ function afterMove() {
   }
   // Booster UI needs to refresh because state.busy / state.undoSnapshot changed
   updateBoosterUI();
+  checkBoardTutorials(); // a power/move may have introduced a new mechanic (explosive, star, …)
 }
 
 /* ---------------------- DAILY EVENT LEVEL ---------------------- */
@@ -7664,6 +7772,7 @@ function runBossAttack(lv) {
     }
     state.busy = false;
     updateBossUI();
+    setTimeout(checkBoardTutorials, 400); // a "block" attack just made rocks — explain them once
   }, 280);
 }
 
@@ -7858,6 +7967,10 @@ function showLevelSelect() {
   const map = document.getElementById("levelMap");
   const data = Save.load();
   map.innerHTML = "";
+  // Gacha is locked until the first prestige (keeps the early game simple; revealed as a reward).
+  const gachaBtn = document.getElementById("gachaBtn");
+  if (gachaBtn) gachaBtn.style.display = gachaUnlocked() ? "" : "none";
+  setTimeout(checkPrestigeApproachTutorial, 400); // explain prestige as the player nears the gate
 
   const launchLevel = (i) => {
     const liveData = tickLives();
@@ -8073,6 +8186,29 @@ document.getElementById("loadoutOpenBtn").addEventListener("click", () => {
   showLoadoutOverlay();
 });
 document.getElementById("loadoutBackBtn").addEventListener("click", hideLoadoutOverlay);
+document.getElementById("skipWorldBtn").addEventListener("click", skipWorld);
+
+// Skip a whole world (the next 5 levels) for diamonds — fast-forward progress (e.g. to test prestige).
+const SKIP_WORLD_GEM_COST = 8;
+function skipWorld() {
+  const data = Save.load();
+  const cur = data.unlocked || 0;
+  if (cur >= LEVELS.length - 1) { showBanner("All levels already unlocked!"); return; }
+  if ((data.gems || 0) < SKIP_WORLD_GEM_COST) { showBanner(`NEED ${SKIP_WORLD_GEM_COST} 💎`); return; }
+  if (!confirm(`Skip the next world (5 levels) for ${SKIP_WORLD_GEM_COST} 💎?\n\nThey'll count as 1-star cleared and the next world unlocks.`)) return;
+  data.gems -= SKIP_WORLD_GEM_COST;
+  const end = Math.min(LEVELS.length - 1, cur + 5);
+  for (let i = cur; i < end; i++) {
+    if (!(data.stars[i] >= 1)) data.stars[i] = 1;
+    if (!(data.best[i] > 0)) data.best[i] = (LEVELS[i] && LEVELS[i].targetScore) || 0;
+  }
+  data.unlocked = end;
+  Save.save(data);
+  updateGemPill();
+  Sound.play("rainbow");
+  showBanner(`⏩ Skipped a world! (−${SKIP_WORLD_GEM_COST} 💎)`);
+  showLevelSelect();
+}
 
 function updateCoinPill() {
   const data = Save.load();
@@ -8123,14 +8259,12 @@ document.getElementById("codexHomeBtn").addEventListener("click", () => _goFromH
 document.getElementById("codexBackBtn").addEventListener("click", hideCodex);
 document.getElementById("streakBackBtn").addEventListener("click", hideStreak);
 document.getElementById("settingsSoundToggle").addEventListener("click", toggleSoundFromSettings);
-document.getElementById("settingsSkipGachaToggle").addEventListener("click", () => {
+document.getElementById("gachaSkipToggle").addEventListener("click", () => {
   const d = Save.load();
   d.skipGachaAnims = !d.skipGachaAnims;
   Save.save(d);
-  const btn = document.getElementById("settingsSkipGachaToggle");
-  btn.classList.toggle("on", !!d.skipGachaAnims);
-  document.getElementById("settingsSkipGachaLabel").textContent = d.skipGachaAnims ? "ON" : "OFF";
-  showBanner(d.skipGachaAnims ? "GACHA ANIMS: OFF (instant)" : "GACHA ANIMS: ON");
+  document.getElementById("gachaSkipToggle").classList.toggle("on", !!d.skipGachaAnims);
+  document.getElementById("gachaSkipLabel").textContent = d.skipGachaAnims ? "ON" : "OFF";
 });
 document.getElementById("settingsReplayTutorial").addEventListener("click", replayTutorial);
 document.getElementById("settingsResetBtn").addEventListener("click", resetProgress);
@@ -8187,9 +8321,6 @@ function showSettings() {
   const data = Save.load();
   document.getElementById("settingsSoundToggle").classList.toggle("on", !data.muted);
   document.getElementById("settingsSoundLabel").textContent = data.muted ? "OFF" : "ON";
-  document.getElementById("settingsSkipGachaToggle").classList.toggle("on", !!data.skipGachaAnims);
-  document.getElementById("settingsSkipGachaLabel").textContent = data.skipGachaAnims ? "ON" : "OFF";
-  renderLoadoutChips();
 }
 
 function renderLoadoutChips() {
@@ -8675,10 +8806,90 @@ function hideLivesModal() {
 // In-game tip banners that walk a first-time player through chain → pop → power.
 // Activated on first START of a level by a player who hasn't seen them.
 const TUTORIAL_TIPS = {
-  1: "👋 Drag across 3 fruits of the SAME color to chain them",
-  2: "💥 Now TAP the merged fruit to pop it for points",
-  3: "⚡ Powers charge as you pop! Tap a glowing icon when ready"
+  1: "👋 Drag across 3+ fruits of the SAME color to merge them",
+  2: "💥 Now TAP the bigger merged fruit to pop it for points",
+  3: "⚡ Keep popping! It builds your HYPE multiplier and charges powers"
 };
+
+/* ---------------------- FEATURE-UNLOCK TUTORIALS ---------------------- */
+// A reusable once-per-feature popup so every feature is explained the moment it's unlocked.
+const FEATURE_TUTORIALS = {
+  gacha: {
+    icon: "🎰", title: "Gacha Unlocked!",
+    body: "Spend <b>coins</b> to pull for special <b>support fruit</b> (🍓🍒🥝🥭🥥🫐). Each has a unique power — slow time, board-clearing bombs, score frenzies and more. Pull <b>duplicates</b> to tier them up, then add them to your loadout. Find <b>GACHA</b> on the level-select screen."
+  },
+  prestige: {
+    icon: "✨", title: "Prestige is Close!",
+    body: "Stuck on a tough level? <b>PRESTIGE</b>! Bank your <b>⭐ stars</b> into a permanent <b>score multiplier</b> — the more stars, the bigger the boost. It only sets you back <b>5 levels</b>, so you keep almost everything (coins, upgrades, fruit) and blast right back through the wall, stronger. Each prestige also unlocks something new."
+  },
+  // --- first-encounter mechanic tutorials (fired by checkBoardTutorials when they first appear) ---
+  boss: {
+    icon: "👹", title: "Boss Level!",
+    body: "Bosses have a <b>health bar</b> that drops as you score — hit the score target to defeat them. But they <b>attack</b> every few moves (turning fruit to rock or shuffling the board), and boss levels are <b>timed</b>. Score fast and don't run out the clock!"
+  },
+  lockedFruit: {
+    icon: "🧊", title: "Frozen Fruit",
+    body: "A fruit with a <b>lock number</b> is frozen — you can't pop it or merge into it yet. <b>Chain across it</b> (include it in a drag) to chip the lock by 1 each time. When the number hits <b>0</b>, it thaws and you can use it."
+  },
+  rockFruit: {
+    icon: "🪨", title: "Rock!",
+    body: "A boss attack turned some fruit to <b>stone</b>. Rocks can't be chained, merged, or popped — they just take up space. Work your chains <b>around</b> them and keep scoring to beat the boss."
+  },
+  explosive: {
+    icon: "💣", title: "Explosive Fruit!",
+    body: "A pulsing fruit is a <b>bomb</b>. Pop it and it <b>blows up everything nearby</b> in a chain reaction — and explosive fruit set off other explosives. Line them up next to big fruit for a massive score blast."
+  },
+  powerupStar: {
+    icon: "⭐", title: "Power Star!",
+    body: "Tap the <b>star</b> to burst it — it <b>supercharges all the fruit around it</b>, growing them bigger. Use it to set up huge merges and big pops."
+  }
+};
+function featureTutSeen(key) {
+  const data = Save.load();
+  return !!(data.featureTuts && data.featureTuts[key]);
+}
+function showFeatureTutorial(key) {
+  const t = FEATURE_TUTORIALS[key];
+  if (!t || featureTutSeen(key)) return;
+  const overlay = document.getElementById("featureTutOverlay");
+  if (overlay.classList.contains("active")) return; // one tutorial at a time
+  const data = Save.load();
+  if (!data.featureTuts) data.featureTuts = {};
+  data.featureTuts[key] = true;
+  Save.save(data);
+  document.getElementById("featureTutIcon").textContent = t.icon;
+  document.getElementById("featureTutTitle").textContent = t.title;
+  document.getElementById("featureTutBody").innerHTML = t.body;
+  // Pause input while teaching (physics keeps running behind it); restore on dismiss.
+  state._tutPrevBusy = state.busy;
+  state.busy = true;
+  overlay.classList.add("active");
+  Sound.play("rainbow");
+}
+document.getElementById("featureTutOkBtn").addEventListener("click", () => {
+  document.getElementById("featureTutOverlay").classList.remove("active");
+  state.busy = !!state._tutPrevBusy; // restore the prior input state
+});
+// Detect new mechanics on the board and explain each the first time it appears (one at a time).
+function checkBoardTutorials() {
+  if (state.level === 0 || state.endless || !state.levelInProgress) return; // skip the L1 tutorial level
+  if (state._completed || state._failed || state.gameOver) return;
+  if (document.getElementById("featureTutOverlay").classList.contains("active")) return;
+  const lv = LEVELS[state.level % LEVELS.length];
+  const has = (fn) => state.balls.some(b => !b.popping && !b._merging && fn(b));
+  if (lv.boss && !featureTutSeen("boss")) return showFeatureTutorial("boss");
+  if (!featureTutSeen("lockedFruit") && has(b => b.lockCount > 0)) return showFeatureTutorial("lockedFruit");
+  if (!featureTutSeen("explosive")  && has(b => b.isExplosive))    return showFeatureTutorial("explosive");
+  if (!featureTutSeen("rockFruit")  && has(b => b.blocked))        return showFeatureTutorial("rockFruit");
+  if (!featureTutSeen("powerupStar")&& has(b => b.isPowerup))      return showFeatureTutorial("powerupStar");
+}
+// First time the player gets ~80% of the way to the first prestige gate, explain prestige. Once only.
+function checkPrestigeApproachTutorial() {
+  const data = Save.load();
+  if ((data.prestige || 0) !== 0 || featureTutSeen("prestige")) return;
+  // Once the player is ~80% of the way to their first prestige (by stars), explain it.
+  if (prestigeNewStars() >= Math.ceil(PRESTIGE_MIN_NEW_STARS * 0.8)) showFeatureTutorial("prestige");
+}
 
 function maybeStartInteractiveTutorial() {
   const data = Save.load();
@@ -8753,9 +8964,7 @@ function trySpendOnBooster(name) {
 
 // Skip-level cost in 💎 gems, scales with level depth.
 function skipLevelGemCost() {
-  const lv = LEVELS[state.level % LEVELS.length];
-  const base = 3 + Math.floor(state.level / 10) * 3; // 3, 6, 9, 12, 15 per band
-  return lv && lv.boss ? base + 3 : base;            // bosses cost a bit extra
+  return 0; // FREE skip (testing aid — advance instantly). Re-add a gem cost later if desired.
 }
 
 function updateBoosterUI() {
@@ -8764,12 +8973,10 @@ function updateBoosterUI() {
     const name = btn.dataset.booster;
     const lbl = btn.querySelector(".bCost");
     if (name === "skip") {
-      const cost = skipLevelGemCost();
-      // Disable when no skip is meaningful: in endless / event modes, when the level
-      // is already cleared, or when player lacks gems.
+      // Skip is FREE now — available immediately, except in endless or once the level is cleared.
       const inSkippable = !state.endless && !state.eventMode && !state._completed;
-      btn.disabled = !inSkippable || (data.gems || 0) < cost;
-      if (lbl) lbl.textContent = String(cost);
+      btn.disabled = !inSkippable;
+      if (lbl) lbl.textContent = "FREE";
       return;
     }
     const cost = effectiveBoosterCost(name);
@@ -8895,13 +9102,9 @@ document.querySelectorAll(".boosterIcon").forEach(btn => {
 function boosterSkipLevel() {
   if (state.endless || state.eventMode) { showBanner("Can't skip this mode"); return; }
   if (state._completed) return;
-  const cost = skipLevelGemCost();
   const data = Save.load();
-  if ((data.gems || 0) < cost) { showBanner(`NEED ${cost} 💎`); return; }
   const lv = LEVELS[state.level];
-  if (!confirm(`Skip Level ${state.level + 1} (${lv.name})?\n\nCost: ${cost} 💎\nYou'll earn 1 star + the next level unlocks. No coin reward.`)) return;
-  // Deduct gems
-  data.gems -= cost;
+  if (!confirm(`Skip Level ${state.level + 1} (${lv.name})?\n\nFREE — you'll earn 1 star + the next level unlocks. No coin reward.`)) return;
   // Mark as 1-star cleared if not already higher
   if (!(data.stars[state.level] >= 1)) data.stars[state.level] = 1;
   // Best score: set to target so it's "complete"
@@ -8915,7 +9118,7 @@ function boosterSkipLevel() {
   // Block subsequent skip during the transition; mark "completed" to avoid life-loss path
   state._completed = true;
   state.levelInProgress = false;
-  showBanner(`⏭️ SKIPPED (−${cost} 💎)`);
+  showBanner("⏭️ SKIPPED");
   Sound.play("rainbow");
   // Brief delay then head to level select
   setTimeout(() => {
@@ -9310,6 +9513,10 @@ function showGachaScreen() {
   updateCoinPill();
   refreshGachaSpinBtn();
   renderCollection();
+  // Sync the skip-animations toggle (moved here from Settings)
+  const _gd = Save.load();
+  document.getElementById("gachaSkipToggle").classList.toggle("on", !!_gd.skipGachaAnims);
+  document.getElementById("gachaSkipLabel").textContent = _gd.skipGachaAnims ? "ON" : "OFF";
   // Reset the ball to a neutral resting state
   const ball = document.getElementById("gachaBall");
   ball.classList.remove("spinning", "reveal");
