@@ -3851,10 +3851,10 @@
 window.FruitWobbleIntro = (function () {
 
   const FRUITS = [
-    { emoji:"🍎", color:"#e74c3c", hi:"#ff8a7a", edge:"#a8241a" },
-    { emoji:"🍌", color:"#f4d35e", hi:"#ffeaa0", edge:"#caa017" },
-    { emoji:"🍇", color:"#8e44ad", hi:"#c89cdb", edge:"#511f76" },
-    { emoji:"🍊", color:"#f39c12", hi:"#ffc973", edge:"#c06c0c" },
+    { emoji:"🍎", color:"#e74c3c", hi:"#ff8a7a", edge:"#a8241a", material:"glossy" },
+    { emoji:"🍌", color:"#f4d35e", hi:"#ffeaa0", edge:"#caa017", material:"matte" },
+    { emoji:"🍇", color:"#8e44ad", hi:"#c89cdb", edge:"#511f76", material:"pearl" },
+    { emoji:"🍊", color:"#f39c12", hi:"#ffc973", edge:"#c06c0c", material:"dimpled" },
   ];
   const PILE = [
     {nx:-0.46,ny:0.46,f:0,ph:0.0,sp:1.7},{nx:0.00,ny:0.56,f:3,ph:1.1,sp:1.9},
@@ -3958,10 +3958,23 @@ window.FruitWobbleIntro = (function () {
       const g=ctx.createRadialGradient(-r*0.36,-r*0.42,r*0.08,0,0,r);
       g.addColorStop(0,fr.hi); g.addColorStop(0.55,fr.color); g.addColorStop(1,fr.edge);
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
-      ctx.save(); ctx.globalAlpha=alpha*0.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=r*0.08;
-      ctx.beginPath(); ctx.arc(0,0,r*0.9,Math.PI*0.1,Math.PI*0.7); ctx.stroke(); ctx.restore();
-      ctx.save(); ctx.translate(-r*0.34,-r*0.42); ctx.rotate(-0.4); ctx.fillStyle="rgba(255,255,255,0.85)";
-      ctx.beginPath(); ctx.ellipse(0,0,r*0.3,r*0.16,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // material-specific surface (matches the game's drawBall): glossy / matte / pearl / dimpled
+      const mat = fr.material || "glossy";
+      if (mat === "pearl") {
+        ctx.fillStyle="rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(-r*0.30,-r*0.30,r*0.22,r*0.13,-0.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,0.40)"; ctx.beginPath(); ctx.ellipse(r*0.28,-r*0.08,r*0.15,r*0.09,0.3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,0.38)"; ctx.beginPath(); ctx.ellipse(-r*0.04,r*0.30,r*0.13,r*0.08,0.1,0,Math.PI*2); ctx.fill();
+      } else if (mat === "dimpled") {
+        ctx.fillStyle="rgba(255,245,200,0.5)"; ctx.beginPath(); ctx.ellipse(-r*0.28,-r*0.34,r*0.27,r*0.15,-0.4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(150,70,10,0.14)";
+        const dips=[[-0.30,0.10],[0.20,0.30],[0.35,-0.10],[-0.10,0.35],[0.05,-0.22],[-0.40,-0.05],[0.30,0.05]];
+        for (const d of dips){ ctx.beginPath(); ctx.arc(d[0]*r,d[1]*r,r*0.05,0,Math.PI*2); ctx.fill(); }
+      } else if (mat === "matte") {
+        ctx.fillStyle="rgba(255,255,255,0.16)"; ctx.beginPath(); ctx.ellipse(-r*0.20,-r*0.34,r*0.30,r*0.14,-0.4,0,Math.PI*2); ctx.fill();
+      } else { // glossy
+        ctx.fillStyle="rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(-r*0.30,-r*0.36,r*0.26,r*0.15,-0.45,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,0.88)"; ctx.beginPath(); ctx.arc(-r*0.32,-r*0.42,r*0.08,0,Math.PI*2); ctx.fill();
+      }
       ctx.restore();
       ctx.save(); ctx.globalAlpha=alpha; ctx.font=`${Math.floor(r*1.02)}px serif`;
       ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(fr.emoji,x,y+r*0.04); ctx.restore();
@@ -3981,7 +3994,7 @@ window.FruitWobbleIntro = (function () {
       // fruit pile inside (clipped to the jar circle)
       ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R*0.94,0,Math.PI*2); ctx.clip();
       const fr=R*0.20;
-      for(const p of PILE){ const bob=Math.sin(now/1000*p.sp+p.ph)*R*0.018; drawFruit(cx+p.nx*R*0.80,cy+p.ny*R*0.74+bob,fr,FRUITS[p.f]); }
+      for(const p of PILE){ const bob=Math.sin(now/1000*p.sp+p.ph)*R*0.018, sq=Math.sin(now/1000*p.sp*0.7+p.ph)*0.05; drawFruit(cx+p.nx*R*0.80,cy+p.ny*R*0.74+bob,fr,FRUITS[p.f],1,1+sq,1-sq); }
       // translucent blue-green glass tint over the fruit (game palette)
       const tint=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,R);
       tint.addColorStop(0,"rgba(222,245,255,0.10)"); tint.addColorStop(0.78,"rgba(166,208,230,0.18)"); tint.addColorStop(1,"rgba(120,162,188,0.34)");
@@ -4006,8 +4019,10 @@ window.FruitWobbleIntro = (function () {
       ctx.restore();
     }
     function drawGameScreen(x,y,w,h,now){
+      // Match the game's Orchard world (level 1): warm amber sky → wood table → grass, smoothed.
       const bg=ctx.createLinearGradient(0,y,0,y+h);
-      bg.addColorStop(0,"#ffe7c4"); bg.addColorStop(0.55,"#ffd0a0"); bg.addColorStop(0.78,"#c98a4f"); bg.addColorStop(1,"#7bbf57");
+      bg.addColorStop(0,"#ffe6b8"); bg.addColorStop(0.35,"#ffd49a"); bg.addColorStop(0.62,"#f0b074");
+      bg.addColorStop(0.80,"#c98a4f"); bg.addColorStop(1,"#7fc457");
       ctx.fillStyle=bg; ctx.fillRect(x,y,w,h);
       ctx.save(); ctx.fillStyle="rgba(255,255,255,0.92)"; roundRect(ctx,x+w*0.05,y+h*0.03,w*0.9,h*0.13,h*0.02); ctx.fill();
       ctx.fillStyle="#ffd0e0"; ctx.strokeStyle="#ff8db0"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+w*0.13,y+h*0.095,h*0.035,0,Math.PI*2); ctx.fill(); ctx.stroke();
