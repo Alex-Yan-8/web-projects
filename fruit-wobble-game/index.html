@@ -10513,7 +10513,9 @@ function boot() {
     try {
       // speed < 1 slows the timeline (now = elapsed × speed). Default 1 ran the whole sting in
       // ~3.3s, which felt rushed — 0.6 stretches it to ~5.5s so each beat is actually visible.
-      FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted, speed: 0.6 }).play();
+      // reducedMotion:false forces the full animation — the default 'auto' honors the OS
+      // "Reduce Motion" setting and INSTANTLY completes the intro (the "split-second" skip).
+      FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted, speed: 0.6, reducedMotion: false }).play();
     } catch (e) {
       console.error("intro failed, showing home", e);
       showHomeScreen(); // never let an intro hiccup block the menu
