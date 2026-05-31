@@ -3384,6 +3384,20 @@
     background: #ff5e7a;
     transform: scale(1.25);
   }
+  /* ===================== APP-OPEN INTRO ANIMATION ===================== */
+  .fw-intro-canvas { position: fixed; inset: 0; display: block; z-index: 100; touch-action: none; }
+  .fw-intro-flash  { position: fixed; inset: 0; background: #fff; z-index: 130; opacity: 0; pointer-events: none; }
+  .fw-intro-skip {
+    position: fixed; z-index: 140;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    color: #fff; font-weight: 900; font-size: 13px; letter-spacing: 1.5px;
+    padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,0.28);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    opacity: 0; transition: opacity .4s ease; pointer-events: none; cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .fw-intro-skip.show { opacity: .85; pointer-events: auto; }
 </style>
 </head>
 <body>
@@ -3814,6 +3828,336 @@
     <button class="nextBtn" id="featureTutOkBtn">Got it!</button>
   </div>
 </div>
+
+<script>
+/* =====================================================================
+   FruitWobbleIntro — app-open animation module (drop-in, self-contained).
+   FruitWobbleIntro.create({ onComplete, sound, speed, reducedMotion, host }).play()
+   ===================================================================== */
+window.FruitWobbleIntro = (function () {
+
+  const FRUITS = [
+    { emoji:"🍎", color:"#e74c3c", hi:"#ff8a7a", edge:"#a8241a" },
+    { emoji:"🍌", color:"#f4d35e", hi:"#ffeaa0", edge:"#caa017" },
+    { emoji:"🍇", color:"#8e44ad", hi:"#c89cdb", edge:"#511f76" },
+    { emoji:"🍊", color:"#f39c12", hi:"#ffc973", edge:"#c06c0c" },
+  ];
+  const PILE = [
+    {nx:-0.46,ny:0.46,f:0,ph:0.0,sp:1.7},{nx:0.00,ny:0.56,f:3,ph:1.1,sp:1.9},
+    {nx:0.46,ny:0.46,f:2,ph:2.3,sp:1.6},{nx:-0.66,ny:0.16,f:1,ph:0.7,sp:2.0},
+    {nx:-0.22,ny:0.20,f:0,ph:3.0,sp:1.8},{nx:0.26,ny:0.22,f:3,ph:1.7,sp:2.1},
+    {nx:0.66,ny:0.14,f:1,ph:2.7,sp:1.7},{nx:-0.44,ny:-0.16,f:2,ph:0.4,sp:1.9},
+    {nx:0.04,ny:-0.12,f:0,ph:2.0,sp:1.6},{nx:0.46,ny:-0.16,f:3,ph:1.3,sp:2.0},
+    {nx:-0.18,ny:-0.46,f:1,ph:2.9,sp:1.8},{nx:0.28,ny:-0.46,f:2,ph:0.9,sp:1.7},
+    {nx:-0.02,ny:0.06,f:0,ph:1.5,sp:2.2},{nx:0.60,ny:-0.44,f:0,ph:3.4,sp:1.9},
+  ];
+  const COL = { juice:"#d8352c", juiceHi:"#ff6a5a", flesh:"#ffe9d0", titlePink:"#ff5e7a", titleDark:"#d8456a" };
+
+  const clamp01=v=>v<0?0:v>1?1:v;
+  const eInCubic=t=>t*t*t;
+  const eInOut=t=>t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const eOutBack=t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);};
+  const seg=(now,a,b)=>clamp01((now-a)/(b-a));
+
+  function create(opts) {
+    opts = opts || {};
+    const host = opts.host || document.body;
+    const onComplete = typeof opts.onComplete === "function" ? opts.onComplete : function(){};
+    const speed = opts.speed || 1;
+    const wantSound = opts.sound !== false;
+    const rmSetting = opts.reducedMotion == null ? 'auto' : opts.reducedMotion;
+    const prefersReduced = rmSetting === true ||
+      (rmSetting === 'auto' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    const T = { DROP_END:820, SPLAT_FLAT:990, REVEAL_IN:1090, REVEAL_OUT:1680, BEAT:1880, ZOOM_OUT:2600, SMACK_OUT:2860, DONE:3340 };
+
+    const cv = document.createElement("canvas"); cv.className = "fw-intro-canvas";
+    const flash = document.createElement("div"); flash.className = "fw-intro-flash";
+    const skipBtn = document.createElement("div"); skipBtn.className = "fw-intro-skip"; skipBtn.textContent = "SKIP ▸";
+    host.appendChild(cv); host.appendChild(flash); host.appendChild(skipBtn);
+    const ctx = cv.getContext("2d");
+
+    let W=0,H=0,DPR=1;
+    function resize(){
+      DPR=Math.min(2, window.devicePixelRatio||1);
+      W=window.innerWidth; H=window.innerHeight;
+      cv.width=Math.floor(W*DPR); cv.height=Math.floor(H*DPR);
+      cv.style.width=W+"px"; cv.style.height=H+"px";
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    resize();
+
+    const Sound = (function(){
+      let ac=null;
+      function ensure(){ if(!wantSound) return null; if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){ac=null}} if(ac&&ac.state==="suspended")ac.resume(); return ac; }
+      function tone(f0,f1,dur,type,vol){ const c=ensure(); if(!c)return; const t=c.currentTime,d=dur/1000;
+        const o=c.createOscillator(),g=c.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t);
+        o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+d); g.gain.setValueAtTime(0.0001,t);
+        g.gain.exponentialRampToValueAtTime(vol,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+        o.connect(g).connect(c.destination); o.start(t); o.stop(t+d+0.02); }
+      function noise(dur,vol){ const c=ensure(); if(!c)return; const len=Math.floor(c.sampleRate*dur/1000);
+        const b=c.createBuffer(1,len,c.sampleRate),d=b.getChannelData(0);
+        for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+        const s=c.createBufferSource(); s.buffer=b; const g=c.createGain(); g.gain.value=vol;
+        const lp=c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1100;
+        s.connect(lp).connect(g).connect(c.destination); s.start(); }
+      return {
+        unlock(){ ensure(); },
+        splat(){ tone(230,55,170,"sine",0.26); noise(180,0.22); },
+        whoosh(){ tone(170,1000,820,"triangle",0.10); },
+        smack(){ tone(150,48,130,"square",0.32); noise(80,0.32); },
+      };
+    })();
+
+    let particles=[], chunks=[], puddleSeed=[];
+    const motes=[]; for(let i=0;i<18;i++) motes.push({x:Math.random(),y:Math.random(),r:1+Math.random()*2.4,sp:0.01+Math.random()*0.03,ph:Math.random()*6.28});
+
+    function spawnSplat(x,y){
+      particles=[];
+      for(let i=0;i<32;i++){ const ang=-Math.PI+Math.random()*Math.PI, spd=280+Math.random()*560;
+        particles.push({x,y,vx:Math.cos(ang)*spd*(0.6+Math.random()*0.8),vy:Math.sin(ang)*spd-Math.random()*200,
+          r:3+Math.random()*12,life:0,max:0.5+Math.random()*0.55,grounded:false,streak:Math.random()<0.4}); }
+      chunks=[];
+      for(let i=0;i<7;i++){ const ang=-Math.PI*0.85+Math.random()*Math.PI*0.7, spd=260+Math.random()*340;
+        chunks.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-260-Math.random()*120,
+          rot:Math.random()*6.28,vr:(Math.random()-0.5)*14,s:14+Math.random()*16,life:0,grounded:false}); }
+      puddleSeed=[];
+      for(let i=0;i<10;i++) puddleSeed.push({dx:(Math.random()-0.5)*W*0.17,rx:24+Math.random()*52,ry:7+Math.random()*11});
+    }
+    function updateDebris(dt){
+      const floorY=H*0.74;
+      for(const p of particles){ if(p.grounded){p.life+=dt;continue;}
+        p.vy+=2300*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life+=dt;
+        if(p.y>=floorY){p.y=floorY;p.grounded=true;p.r*=1.25;} }
+      particles=particles.filter(p=>p.life<p.max+0.4);
+      for(const c of chunks){ if(c.grounded){c.life+=dt;continue;}
+        c.vy+=2400*dt; c.x+=c.vx*dt; c.y+=c.vy*dt; c.rot+=c.vr*dt; c.life+=dt;
+        if(c.y>=floorY-c.s*0.3){c.y=floorY-c.s*0.3;c.grounded=true;c.vr*=0.2;} }
+    }
+
+    function roundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y);
+      c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+    function drawFruit(x,y,r,fr,alpha=1,sx=1,sy=1){
+      ctx.save(); ctx.globalAlpha=alpha; ctx.translate(x,y); ctx.scale(sx,sy);
+      ctx.save(); ctx.fillStyle="rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(0,r*0.92,r*0.82,r*0.24,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      const g=ctx.createRadialGradient(-r*0.36,-r*0.42,r*0.08,0,0,r);
+      g.addColorStop(0,fr.hi); g.addColorStop(0.55,fr.color); g.addColorStop(1,fr.edge);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.globalAlpha=alpha*0.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=r*0.08;
+      ctx.beginPath(); ctx.arc(0,0,r*0.9,Math.PI*0.1,Math.PI*0.7); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.translate(-r*0.34,-r*0.42); ctx.rotate(-0.4); ctx.fillStyle="rgba(255,255,255,0.85)";
+      ctx.beginPath(); ctx.ellipse(0,0,r*0.3,r*0.16,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha=alpha; ctx.font=`${Math.floor(r*1.02)}px serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(fr.emoji,x,y+r*0.04); ctx.restore();
+    }
+    function drawChunks(){
+      for(const c of chunks){ const a=clamp01(1-(c.life-(c.grounded?1.4:99))/0.6);
+        ctx.save(); ctx.globalAlpha=c.grounded?Math.max(0.5,a):1; ctx.translate(c.x,c.y); ctx.rotate(c.rot);
+        ctx.fillStyle=FRUITS[0].color; roundRect(ctx,-c.s*0.5,-c.s*0.35,c.s,c.s*0.7,c.s*0.25); ctx.fill();
+        ctx.fillStyle=COL.flesh; ctx.beginPath(); ctx.ellipse(0,0,c.s*0.3,c.s*0.22,0,0,Math.PI*2); ctx.fill();
+        ctx.restore(); }
+      ctx.globalAlpha=1;
+    }
+    function drawGlassOrb(cx,cy,R,now){
+      ctx.save(); ctx.fillStyle="rgba(80,40,15,0.28)"; ctx.beginPath(); ctx.ellipse(cx,cy+R*0.96,R*0.86,R*0.12,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R*0.94,0,Math.PI*2); ctx.clip();
+      const fr=R*0.20;
+      for(const p of PILE){ const bob=Math.sin(now/1000*p.sp+p.ph)*R*0.018; drawFruit(cx+p.nx*R*0.80,cy+p.ny*R*0.74+bob,fr,FRUITS[p.f]); }
+      ctx.restore();
+      ctx.save();
+      const gg=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.1,cx,cy,R);
+      gg.addColorStop(0,"rgba(255,255,255,0.05)"); gg.addColorStop(0.62,"rgba(255,255,255,0.03)");
+      gg.addColorStop(0.86,"rgba(255,255,255,0.16)"); gg.addColorStop(1,"rgba(255,255,255,0.42)");
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation="lighter";
+      const hl=ctx.createRadialGradient(cx-R*0.32,cy-R*0.4,2,cx-R*0.32,cy-R*0.4,R*0.6);
+      hl.addColorStop(0,"rgba(255,255,255,0.5)"); hl.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=hl; ctx.beginPath(); ctx.arc(cx-R*0.32,cy-R*0.4,R*0.6,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.lineWidth=Math.max(1.5,R*0.02); ctx.strokeStyle="rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.99,0,Math.PI*2); ctx.stroke();
+      ctx.lineWidth=Math.max(2,R*0.03); ctx.strokeStyle="rgba(255,255,255,0.85)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.97,Math.PI*1.05,Math.PI*1.5); ctx.stroke();
+      ctx.restore();
+    }
+    function drawGameScreen(x,y,w,h,now){
+      const bg=ctx.createLinearGradient(0,y,0,y+h);
+      bg.addColorStop(0,"#ffe7c4"); bg.addColorStop(0.55,"#ffd0a0"); bg.addColorStop(0.78,"#c98a4f"); bg.addColorStop(1,"#7bbf57");
+      ctx.fillStyle=bg; ctx.fillRect(x,y,w,h);
+      ctx.save(); ctx.fillStyle="rgba(255,255,255,0.92)"; roundRect(ctx,x+w*0.05,y+h*0.03,w*0.9,h*0.13,h*0.02); ctx.fill();
+      ctx.fillStyle="#ffd0e0"; ctx.strokeStyle="#ff8db0"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+w*0.13,y+h*0.095,h*0.035,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.font=`${Math.floor(h*0.045)}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("🐵",x+w*0.13,y+h*0.10);
+      ctx.fillStyle="#e3e9f3"; roundRect(ctx,x+w*0.24,y+h*0.085,w*0.6,h*0.02,h*0.01); ctx.fill(); ctx.restore();
+      for(let i=0;i<4;i++){ const px=x+w*(0.28+i*0.15),py=y+h*0.215;
+        ctx.fillStyle="#cfd6e0"; ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(px,py,h*0.028,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.font=`${Math.floor(h*0.03)}px serif`; ctx.fillText(FRUITS[i].emoji,px,py); }
+      drawGlassOrb(x+w*0.5,y+h*0.58,w*0.42,now);
+      const labels=["💡","↩️","🔀","⚡","⏭️"];
+      for(let i=0;i<5;i++){ const px=x+w*(0.13+i*0.18),py=y+h*0.93;
+        ctx.fillStyle="rgba(255,255,255,0.85)"; ctx.strokeStyle="#cfd6e0"; ctx.lineWidth=2; roundRect(ctx,px-w*0.07,py-h*0.03,w*0.14,h*0.06,6); ctx.fill(); ctx.stroke();
+        ctx.font=`${Math.floor(h*0.028)}px serif`; ctx.fillText(labels[i],px,py); }
+    }
+    function drawWorld(){
+      const floorY=H*0.74, grassY=H*0.92;
+      const sky=ctx.createLinearGradient(0,0,0,floorY); sky.addColorStop(0,"#ffe9c8"); sky.addColorStop(1,"#ffcf9e");
+      ctx.fillStyle=sky; ctx.fillRect(-W,-H,W*3,floorY+H);
+      const wood=ctx.createLinearGradient(0,floorY,0,grassY); wood.addColorStop(0,"#c98a4f"); wood.addColorStop(1,"#9c6532");
+      ctx.fillStyle=wood; ctx.fillRect(-W,floorY,W*3,grassY-floorY);
+      ctx.save(); ctx.strokeStyle="rgba(80,45,18,0.18)"; ctx.lineWidth=2;
+      for(let i=-6;i<=6;i++){ ctx.beginPath(); ctx.moveTo(W/2,floorY); ctx.lineTo(W/2+i*W*0.16,grassY); ctx.stroke(); }
+      ctx.strokeStyle="rgba(80,45,18,0.12)"; ctx.beginPath(); ctx.moveTo(-W,floorY+(grassY-floorY)*0.5); ctx.lineTo(W*2,floorY+(grassY-floorY)*0.5); ctx.stroke(); ctx.restore();
+      const gr=ctx.createLinearGradient(0,grassY,0,H); gr.addColorStop(0,"#7fc457"); gr.addColorStop(1,"#5fa83c");
+      ctx.fillStyle=gr; ctx.fillRect(-W,grassY,W*3,H-grassY+2);
+    }
+    function drawPuddle(alpha){ if(!puddleSeed.length)return; const floorY=H*0.74;
+      ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=COL.juice;
+      for(const b of puddleSeed){ ctx.beginPath(); ctx.ellipse(W/2+b.dx,floorY+2,b.rx,b.ry,0,0,Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha=alpha*0.4; ctx.fillStyle=COL.juiceHi; ctx.beginPath(); ctx.ellipse(W/2-12,floorY-2,42,7,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    function drawParticles(){ for(const p of particles){ const a=clamp01(1-(p.life-p.max)/0.4);
+      ctx.globalAlpha=p.grounded?a*0.85:1; ctx.fillStyle=p.grounded?COL.juice:COL.juiceHi; ctx.beginPath();
+      if(p.grounded) ctx.ellipse(p.x,p.y,p.r*1.1,p.r*0.4,0,0,Math.PI*2);
+      else if(p.streak) ctx.ellipse(p.x,p.y,p.r*0.5,p.r*1.4,Math.atan2(p.vy,p.vx)+Math.PI/2,0,Math.PI*2);
+      else ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1; }
+    function drawDrop(now){
+      const floorY=H*0.74, r=Math.min(W,H)*0.085, x=W/2, restY=floorY-r*0.55;
+      const p=seg(now,0,T.DROP_END), y=-H*0.35+(restY-(-H*0.35))*eInCubic(p);
+      let sx=1-p*0.12, sy=1+p*0.18;
+      if(now>=T.DROP_END){ const fp=seg(now,T.DROP_END,T.SPLAT_FLAT); sy=1.18*(1-fp)+0.16*fp; sx=0.88+(1.95-0.88)*fp; drawFruit(x,restY+r*0.5*fp,r,FRUITS[0],1-fp,sx,sy); return; }
+      drawFruit(x,y,r,FRUITS[0],1,sx,sy);
+    }
+    function drawPhone(now,revealP){
+      const floorY=H*0.74, ph=Math.min(H*0.50,560), pw=ph*0.49;
+      const s=eOutBack(revealP), scale=0.18+0.82*s, cx=W/2, cy=(floorY-ph*0.40)+(1-s)*ph*0.18;
+      const w=pw*scale,h=ph*scale,x=cx-w/2,y=cy-h/2,rad=w*0.16;
+      ctx.save(); ctx.globalAlpha=clamp01(revealP*1.4);
+      ctx.save(); ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(cx,y+h,w*0.6,h*0.04,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      const bg=ctx.createLinearGradient(x,y,x+w,y+h); bg.addColorStop(0,"#2b2f3a"); bg.addColorStop(0.5,"#171a22"); bg.addColorStop(1,"#0d0f15");
+      ctx.fillStyle=bg; roundRect(ctx,x,y,w,h,rad); ctx.fill();
+      ctx.lineWidth=Math.max(1.5,w*0.012); ctx.strokeStyle="rgba(255,255,255,0.2)"; roundRect(ctx,x+1,y+1,w-2,h-2,rad); ctx.stroke();
+      const m=w*0.045, sx=x+m, sy=y+m*1.3, sw=w-2*m, sh=h-2.4*m, srad=rad*0.7;
+      ctx.save(); roundRect(ctx,sx,sy,sw,sh,srad); ctx.clip(); drawGameScreen(sx,sy,sw,sh,now);
+      ctx.fillStyle="rgba(255,255,255,0.10)"; ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+sw*0.42,sy); ctx.lineTo(sx+sw*0.16,sy+sh); ctx.lineTo(sx,sy+sh); ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.fillStyle="#05070b"; const nw=w*0.3,nh=h*0.022; roundRect(ctx,cx-nw/2,y+m*0.5,nw,nh+2,nh); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.55)"; roundRect(ctx,cx-w*0.13,y+h-m*0.9,w*0.26,Math.max(2,h*0.008),3); ctx.fill();
+      if(revealP<0.9){ ctx.fillStyle=COL.juice; ctx.globalAlpha=clamp01(revealP*1.4)*(1-revealP);
+        for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.ellipse(cx+i*w*0.28,y+h*0.2,w*0.03,h*0.06*(1-revealP),0,0,Math.PI*2); ctx.fill(); } }
+      ctx.restore();
+      return { w:sw, h:sh, screenCx:sx+sw/2, screenCy:sy+sh/2 };
+    }
+
+    let rafId=0, startT=0, lastT=0, shakeAmp=0, lastRect=null;
+    let firedSplat=false, firedWhoosh=false, firedSmack=false, completed=false, finished=false, paused=false;
+    let lastResumeNow=null;
+    function camForZoom(s){ return { fx:s.screenCx, fy:s.screenCy, scale:Math.max(W/s.w,H/s.h)*0.98 }; }
+
+    function doComplete(){
+      if(completed) return; completed=true;
+      skipBtn.classList.remove("show"); skipBtn.style.pointerEvents="none";
+      window.removeEventListener("pointerdown", onTapSkip, true);
+      flash.style.transition="none"; flash.style.opacity="1";
+      try{ onComplete(); }catch(e){ console.error("FruitWobbleIntro onComplete error", e); }
+      requestAnimationFrame(()=>{ flash.style.transition="opacity .5s ease"; flash.style.opacity="0"; });
+      setTimeout(finish, 560/speed);
+    }
+    function finish(){
+      if(finished) return; finished=true;
+      cancelAnimationFrame(rafId); rafId=0;
+      cv.style.display="none";
+    }
+
+    function frame(t){
+      if(!startT){ startT=t; lastT=t; }
+      const now=(t-startT)*speed;
+      const dt=Math.min(0.05,((t-lastT)/1000)*speed); lastT=t;
+      lastResumeNow=now;
+
+      if(!firedSplat&&now>=T.DROP_END){ firedSplat=true; spawnSplat(W/2,H*0.74); Sound.splat(); shakeAmp=20; }
+      if(!firedWhoosh&&now>=T.BEAT){ firedWhoosh=true; Sound.whoosh(); }
+      if(!firedSmack&&now>=T.SMACK_OUT-150){ firedSmack=true; Sound.smack(); shakeAmp=34; }
+
+      updateDebris(dt);
+      shakeAmp*=Math.pow(0.0008,dt);
+
+      if(!completed&&now>=T.SMACK_OUT) doComplete();
+      const inPlay=now>=T.SMACK_OUT;
+
+      let cam={fx:W/2,fy:H/2,scale:1};
+      if(lastRect&&now>=T.BEAT&&!inPlay){
+        const tgt=camForZoom(lastRect), zp=eInOut(seg(now,T.BEAT,T.ZOOM_OUT));
+        cam.fx=W/2+(tgt.fx-W/2)*zp; cam.fy=H/2+(tgt.fy-H/2)*zp; cam.scale=1+(tgt.scale-1)*zp;
+        if(now>=T.ZOOM_OUT){ const sp=eInCubic(seg(now,T.ZOOM_OUT,T.SMACK_OUT)); cam.scale=tgt.scale*(1+sp*1.7); }
+      } else if(!inPlay&&now>=T.REVEAL_OUT){ cam.scale=1+seg(now,T.REVEAL_OUT,T.BEAT)*0.05; }
+
+      const shx=(Math.random()*2-1)*shakeAmp, shy=(Math.random()*2-1)*shakeAmp;
+      ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+
+      if(!inPlay){
+        ctx.save(); ctx.translate(W/2+shx,H/2+shy); ctx.scale(cam.scale,cam.scale); ctx.translate(-cam.fx,-cam.fy);
+        drawWorld();
+        drawPuddle(clamp01(seg(now,T.DROP_END,T.REVEAL_OUT))*0.95);
+        drawParticles(); drawChunks();
+        if(now<T.SPLAT_FLAT) drawDrop(now);
+        if(now>=T.REVEAL_IN) lastRect=drawPhone(now,clamp01(seg(now,T.REVEAL_IN,T.REVEAL_OUT)));
+        ctx.restore();
+
+        ctx.save(); ctx.globalCompositeOperation="lighter";
+        for(const mo of motes){ const my=(mo.y-(now/1000)*mo.sp)%1, yy=(my<0?my+1:my)*H;
+          ctx.globalAlpha=0.25+0.25*Math.sin(now/600+mo.ph); ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(mo.x*W,yy,mo.r,0,Math.PI*2); ctx.fill(); }
+        ctx.restore(); ctx.globalAlpha=1;
+
+        if(now>=T.BEAT){ const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.28,W/2,H/2,Math.max(W,H)*0.72);
+          v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(0,0,0,0.5)"); ctx.fillStyle=v; ctx.fillRect(0,0,W,H); }
+        if(now>=T.ZOOM_OUT){ const sp=seg(now,T.ZOOM_OUT,T.SMACK_OUT);
+          ctx.save(); ctx.globalAlpha=sp*0.7; ctx.strokeStyle="#fff"; ctx.lineWidth=2;
+          for(let i=0;i<16;i++){ const a=i/16*Math.PI*2, r0=Math.min(W,H)*0.2*(1-sp), r1=Math.max(W,H);
+            ctx.beginPath(); ctx.moveTo(W/2+Math.cos(a)*r0,H/2+Math.sin(a)*r0); ctx.lineTo(W/2+Math.cos(a)*r1,H/2+Math.sin(a)*r1); ctx.stroke(); }
+          ctx.restore(); ctx.fillStyle=`rgba(255,255,255,${sp})`; ctx.fillRect(0,0,W,H); }
+      }
+
+      if(!finished) rafId=requestAnimationFrame(frame);
+    }
+
+    function onTapSkip(){ skip(); }
+    function onVisibility(){
+      if(document.hidden){ paused=true; cancelAnimationFrame(rafId); rafId=0; }
+      else if(paused && !finished){ paused=false; lastT=0;
+        const resume=performance.now();
+        startT = resume - ( (lastResumeNow!=null?lastResumeNow:0) / speed );
+        rafId=requestAnimationFrame(frame);
+      }
+    }
+
+    function play(){
+      finished=false;
+      cv.style.display="block";
+      if(prefersReduced){ completed=true;
+        try{ onComplete(); }catch(e){ console.error("FruitWobbleIntro onComplete error", e); }
+        finish(); return;
+      }
+      Sound.unlock();
+      window.addEventListener("pointerdown", onTapSkip, true);
+      setTimeout(()=>{ if(!completed) skipBtn.classList.add("show"); }, 900/speed);
+      startT=0; lastT=0;
+      rafId=requestAnimationFrame(frame);
+    }
+    function skip(){ if(completed) return; doComplete(); }
+    function destroy(){
+      cancelAnimationFrame(rafId); rafId=0;
+      window.removeEventListener("pointerdown", onTapSkip, true);
+      window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibility);
+      [cv,flash,skipBtn].forEach(el=>{ if(el&&el.parentNode) el.parentNode.removeChild(el); });
+    }
+
+    window.addEventListener("resize", resize);
+    document.addEventListener("visibilitychange", onVisibility);
+    skipBtn.addEventListener("click", (e)=>{ e.stopPropagation(); skip(); });
+
+    return { play, skip, destroy, get done(){ return finished; } };
+  }
+
+  return { create };
+})();
+</script>
 
 <script>
 /* =====================================================================
@@ -9888,8 +10232,22 @@ function boot() {
   applyCosmetics();
   // Background level renders behind the home screen for a sneak peek of gameplay
   startLevel(Math.min(data.unlocked, LEVELS.length - 1));
-  showHomeScreen();
   requestAnimationFrame(frame);
+  // App-open intro animation — plays once per tab session (reloads while testing skip it), then
+  // reveals the home screen. Skippable (tap / SKIP button). Falls back to the home if unavailable.
+  let introSeen = false;
+  try { introSeen = sessionStorage.getItem("fwIntroSeen") === "1"; } catch (e) {}
+  if (window.FruitWobbleIntro && !introSeen) {
+    try {
+      try { sessionStorage.setItem("fwIntroSeen", "1"); } catch (e) {}
+      FruitWobbleIntro.create({ onComplete: showHomeScreen, sound: !data.muted }).play();
+    } catch (e) {
+      console.error("intro failed, showing home", e);
+      showHomeScreen(); // never let an intro hiccup block the menu
+    }
+  } else {
+    showHomeScreen();
+  }
 }
 
 window.addEventListener("resize", () => {
