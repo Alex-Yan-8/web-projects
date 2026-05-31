@@ -4373,7 +4373,7 @@ const Save = (() => {
       stats: {
         pops: 0, bigPops: 0, giantPops: 0,
         chainsCount: 0, biggestChain: 0, biggestSize: 0,
-        levelsCleared: 0, threeStarClears: 0, bossesDefeated: 0,
+        levelsCleared: 0, threeStarClears: 0, perfectLevels: 0, bossesDefeated: 0,
         coinsEarned: 0, coinsSpent: 0,
         gachaPulls: 0, legendaryPulls: 0,
         powersActivated: 0, grapeBombsTriggered: 0, bubblesBoosted: 0
@@ -4453,11 +4453,14 @@ const Save = (() => {
       if (!obj.stats || typeof obj.stats !== "object") obj.stats = {};
       const STAT_KEYS = [
         "pops","bigPops","giantPops","chainsCount","biggestChain","biggestSize",
-        "levelsCleared","threeStarClears","bossesDefeated",
+        "levelsCleared","threeStarClears","perfectLevels","bossesDefeated",
         "coinsEarned","coinsSpent","gachaPulls","legendaryPulls",
         "powersActivated","grapeBombsTriggered","bubblesBoosted"
       ];
       for (const k of STAT_KEYS) if (typeof obj.stats[k] !== "number") obj.stats[k] = 0;
+      // perfectLevels is DERIVED from per-level stars (unique 3-star levels) — always recompute it
+      // so it's authoritative and backfills existing saves that predate the counter.
+      obj.stats.perfectLevels = (Array.isArray(obj.stars) ? obj.stars : []).filter(s => (s || 0) >= 3).length;
       if (!obj.achievements || typeof obj.achievements !== "object") obj.achievements = {};
       // (achievement state stored as: { id: { claimed: bool } })
       if (!obj.daily || typeof obj.daily !== "object") obj.daily = {};
@@ -4908,6 +4911,12 @@ function startLevel(i, fromPlayer = false) {
   state.hypeMax = HYPE_MAX + (_pr.hypeBonus || 0); // prestige can raise the Hype cap
   state.frenzyUntil = 0;
   state.frenzyMult = 1;
+  // Clear timed fruit-power buffs so they can't leak into the next level (cherry score-mult,
+  // kiwi slow-mo) — fire a power, clear/fail the level within its window, and the next board
+  // would otherwise start pre-buffed or with gravity still frozen.
+  state.cherryBuff = null;
+  state.slowMoUntil = 0;
+  state.slowMoFactor = 1;
   state.tutPaused = false;
   document.body.classList.remove("frenzy");
   const _ftO = document.getElementById("featureTutOverlay"); if (_ftO) _ftO.classList.remove("active");
@@ -5624,6 +5633,14 @@ function activatePower(type) {
     });
   }
 
+  // Coconut/Banana with no valid targets on a non-boss level: preserve the charge instead of
+  // burning a full meter for zero effect (mirrors apple's no-op behavior). On boss levels the
+  // charge was already spent productively as the 15% blast above, so it's fair to consume.
+  if ((type === "coconut" || type === "banana") && affected === 0 && !lv.boss) {
+    showBanner("NO TARGETS — charge saved");
+    updatePowerUI();
+    return;
+  }
   state.powers[type] = 0;
   updatePowerUI();
 }
@@ -8119,8 +8136,9 @@ function endEndless() {
   Save.save(data);
   // Pet XP from endless: 1 XP per 40 score (2.5× former rate)
   awardPetXp(Math.floor(final / 40));
-  // Show overlay
+  // Show overlay (clear any star icons left over from a prior Level-Cleared overlay)
   const overlay = document.getElementById("overlay");
+  const _os = document.getElementById("overlayStars"); if (_os) _os.innerHTML = "";
   document.getElementById("overlayEmoji").textContent = isNewBest ? "🏆" : "♾️";
   document.getElementById("overlayTitle").textContent = isNewBest ? "NEW BEST!" : "Endless Over";
   document.getElementById("overlaySub").textContent = `Score: ${final.toLocaleString()}  ·  Best: ${(data.bestEndless || 0).toLocaleString()}${earned > 0 ? "  ·  +" + earned + " 🪙" : ""}${xp > 0 ? "  ·  +" + xp + " 🏵️ XP" : ""}`;
@@ -8312,6 +8330,9 @@ function levelComplete() {
   }
   const replay = (data.stars[state.level] || 0) > 0; // was this level already cleared before?
   if (stars > (data.stars[state.level] || 0)) data.stars[state.level] = stars;
+  // Honest count of UNIQUE levels at 3 stars (for the PERFECTIONIST achievement). The cumulative
+  // `threeStarClears` stat counts re-clears too, so it must NOT drive "3-star all N levels".
+  data.stats.perfectLevels = data.stars.filter(s => (s || 0) >= 3).length;
   const nextLevel = Math.min(LEVELS.length - 1, state.level + 1);
   if (nextLevel > data.unlocked) data.unlocked = nextLevel;
   // Coin reward: (base + per-star + boss) × deeper-level scaling × Coin Rate × pet × event × prestige.
@@ -8623,6 +8644,15 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 });
 
 document.getElementById("restartBtn").addEventListener("click", () => {
+  // During an Endless run, restart re-rolls a fresh endless board (not normal Level 1).
+  // Without this guard startLevel(state.level=0) would drop the player into regular Level 1.
+  if (state.endless) {
+    document.getElementById("overlay").classList.remove("active");
+    state._completed = false;
+    state.gameOver = false;
+    startEndless();
+    return;
+  }
   // Restarting an in-progress (not yet cleared) level counts as a give-up → costs a life
   if (state.levelInProgress && !state._completed) {
     const data = tickLives();
@@ -8807,7 +8837,6 @@ function renderLoadoutChips() {
   const data = Save.load();
   const loadout = data.loadoutAllowedTypes || FRUITS.map(f => f.type);
   const containers = [
-    document.getElementById("loadoutChips"),
     document.getElementById("hubLoadoutChips")
   ].filter(Boolean);
 
@@ -9075,7 +9104,7 @@ const ACHIEVEMENTS = [
   { id: "mega_pop",       name: "MEGA POP",      desc: "Pop a size-15 bubble",        stat: "biggestSize",     threshold: 15, reward: 200,  emoji: "💣" },
   { id: "legendary",      name: "LEGENDARY!",    desc: "Pull a Legendary fruit",      stat: "legendaryPulls",  threshold: 1,  reward: 250,  emoji: "🌟" },
   { id: "combo7",         name: "Combo Crusher", desc: "Chain 7+ bubbles in one move",stat: "biggestChain",    threshold: 7,  reward: 150,  emoji: "🔥" },
-  { id: "all_3star",      name: "PERFECTIONIST", desc: `3-star all ${LEVELS.length} levels`, stat: "threeStarClears", threshold: LEVELS.length, reward: 1500, emoji: "💎" }
+  { id: "all_3star",      name: "PERFECTIONIST", desc: `3-star all ${LEVELS.length} levels`, stat: "perfectLevels", threshold: LEVELS.length, reward: 1500, emoji: "💎" }
 ];
 
 function achievementState(id) {
@@ -9657,7 +9686,7 @@ function upgVal(trackId) {
 }
 function upgradeNextCost(trackId) {
   const t = upgradeTier(trackId);
-  return t >= 5 ? null : UPGRADE_COSTS[t];
+  return t >= UPGRADE_COSTS.length ? null : UPGRADE_COSTS[t]; // was hard-coded 5; tracks go to 10
 }
 function buyUpgrade(trackId, useGem = false) {
   const data = Save.load();
@@ -9815,6 +9844,10 @@ function getDailyClaimInfo() {
 }
 
 function checkAndMaybeShowDaily() {
+  // Only surface the daily modal if we're still on the home screen — this is fired on a 250ms
+  // delay, and the player may have navigated to Play/How-To in the meantime.
+  const home = document.getElementById("homeOverlay");
+  if (!home || !home.classList.contains("active")) return;
   const info = getDailyClaimInfo();
   if (info.alreadyClaimed) return;
   showDailyBonusModal(info);
@@ -9846,13 +9879,26 @@ function claimDailyBonus() {
   data.lastLoginDate = todayISO();
   data.coins += info.coinReward;
   let bannerText = `DAILY +${info.coinReward} 🪙`;
+  let freeResult = null;
   if (info.freeSpin) {
-    const result = Gacha.pull();
-    data.pieces[result.fruit.type] = (data.pieces[result.fruit.type] || 0) + result.rarity.pieces;
+    // Full pull bookkeeping (was dropping the tier-up, pity advance, and pull stats):
+    const forceLeg = (data.pityCounter || 0) + 1 >= Gacha.PITY_GUARANTEE;
+    freeResult = Gacha.pull(false, forceLeg);
+    data.pieces[freeResult.fruit.type] = (data.pieces[freeResult.fruit.type] || 0) + freeResult.rarity.pieces;
     data.pullCount = (data.pullCount || 0) + 1;
-    bannerText += ` · ${result.rarity.name.toUpperCase()} ${result.fruit.emoji} +${result.rarity.pieces}`;
+    if (!data.stats) data.stats = {};
+    data.stats.gachaPulls = (data.stats.gachaPulls || 0) + 1;
+    if (freeResult.rarity.name === "legendary") {
+      data.pityCounter = 0;
+      data.stats.legendaryPulls = (data.stats.legendaryPulls || 0) + 1;
+    } else {
+      data.pityCounter = (data.pityCounter || 0) + 1;
+    }
+    bannerText += ` · ${freeResult.rarity.name.toUpperCase()} ${freeResult.fruit.emoji} +${freeResult.rarity.pieces}`;
   }
   Save.save(data);
+  // tryUpgrade re-loads/saves fresh, so it must run AFTER the save above (else it'd be clobbered).
+  if (freeResult) tryUpgrade(freeResult.fruit.type);
   hideDailyBonusModal();
   updateCoinPill();
   Sound.play("rainbow");
