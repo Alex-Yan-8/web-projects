@@ -3974,23 +3974,35 @@ window.FruitWobbleIntro = (function () {
         ctx.restore(); }
       ctx.globalAlpha=1;
     }
+    // Clear blue-green glass JAR (matches the game's #jar-wrap), NOT a white crystal ball.
     function drawGlassOrb(cx,cy,R,now){
-      ctx.save(); ctx.fillStyle="rgba(80,40,15,0.28)"; ctx.beginPath(); ctx.ellipse(cx,cy+R*0.96,R*0.86,R*0.12,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // cool ground contact shadow
+      ctx.save(); ctx.fillStyle="rgba(40,70,90,0.26)"; ctx.beginPath(); ctx.ellipse(cx,cy+R*0.98,R*0.84,R*0.12,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // fruit pile inside (clipped to the jar circle)
       ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R*0.94,0,Math.PI*2); ctx.clip();
       const fr=R*0.20;
       for(const p of PILE){ const bob=Math.sin(now/1000*p.sp+p.ph)*R*0.018; drawFruit(cx+p.nx*R*0.80,cy+p.ny*R*0.74+bob,fr,FRUITS[p.f]); }
+      // translucent blue-green glass tint over the fruit (game palette)
+      const tint=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,R);
+      tint.addColorStop(0,"rgba(222,245,255,0.10)"); tint.addColorStop(0.78,"rgba(166,208,230,0.18)"); tint.addColorStop(1,"rgba(120,162,188,0.34)");
+      ctx.fillStyle=tint; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      // bottom inner depth
+      const dep=ctx.createRadialGradient(cx,cy+R*0.5,R*0.1,cx,cy+R*0.5,R*0.95);
+      dep.addColorStop(0,"rgba(70,110,140,0)"); dep.addColorStop(1,"rgba(70,110,140,0.28)");
+      ctx.fillStyle=dep; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
       ctx.restore();
+      // bright glass rim + brighter top-left light arc
       ctx.save();
-      const gg=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.1,cx,cy,R);
-      gg.addColorStop(0,"rgba(255,255,255,0.05)"); gg.addColorStop(0.62,"rgba(255,255,255,0.03)");
-      gg.addColorStop(0.86,"rgba(255,255,255,0.16)"); gg.addColorStop(1,"rgba(255,255,255,0.42)");
-      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      ctx.lineWidth=Math.max(2,R*0.035); ctx.strokeStyle="rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.97,0,Math.PI*2); ctx.stroke();
+      ctx.lineWidth=Math.max(2,R*0.045); ctx.strokeStyle="rgba(255,255,255,0.85)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.95,Math.PI*1.05,Math.PI*1.5); ctx.stroke();
+      // soft diagonal shine streak (top-left), additive
       ctx.save(); ctx.globalCompositeOperation="lighter";
-      const hl=ctx.createRadialGradient(cx-R*0.32,cy-R*0.4,2,cx-R*0.32,cy-R*0.4,R*0.6);
-      hl.addColorStop(0,"rgba(255,255,255,0.5)"); hl.addColorStop(1,"rgba(255,255,255,0)");
-      ctx.fillStyle=hl; ctx.beginPath(); ctx.arc(cx-R*0.32,cy-R*0.4,R*0.6,0,Math.PI*2); ctx.fill(); ctx.restore();
-      ctx.lineWidth=Math.max(1.5,R*0.02); ctx.strokeStyle="rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.99,0,Math.PI*2); ctx.stroke();
-      ctx.lineWidth=Math.max(2,R*0.03); ctx.strokeStyle="rgba(255,255,255,0.85)"; ctx.beginPath(); ctx.arc(cx,cy,R*0.97,Math.PI*1.05,Math.PI*1.5); ctx.stroke();
+      const hl=ctx.createRadialGradient(cx-R*0.34,cy-R*0.42,2,cx-R*0.34,cy-R*0.42,R*0.5);
+      hl.addColorStop(0,"rgba(255,255,255,0.38)"); hl.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=hl; ctx.beginPath(); ctx.ellipse(cx-R*0.34,cy-R*0.42,R*0.26,R*0.46,-0.5,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // open mouth — clear rim highlight ellipse at the very top (the jar's opening)
+      ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.lineWidth=Math.max(1.5,R*0.022);
+      ctx.beginPath(); ctx.ellipse(cx,cy-R*0.84,R*0.4,R*0.1,0,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     function drawGameScreen(x,y,w,h,now){
