@@ -7760,9 +7760,12 @@ function animateMergeAndPop(consumed, survivor, done) {
         b.popping = true;
         b.popTimer = 0;
       }
-      // remove from grid array AFTER the pop animation finishes
+      // remove from grid array AFTER the pop animation finishes — remove ONLY this merge's own
+      // consumed balls (not every popping ball), so a concurrent timer-driven pop can't yank
+      // balls this callback doesn't own.
+      const _consumedSet = new Set(consumed);
       setTimeout(() => {
-        state.balls = state.balls.filter(b => !b.popping);
+        state.balls = state.balls.filter(b => !_consumedSet.has(b));
         // compact + refill so the bowl stays full
         compactAndRefill();
         Sound.play("fall");
@@ -7847,6 +7850,7 @@ function popCells(balls, done) {
   if (popCount > 0) chargeNewFruitsFromAnyPop(popCount * 3);
 
   for (const b of balls) b.popping = true;
+  const _popSet = new Set(balls);
   jostle(); // wake the surrounding pile so it drops fast to fill the gap
 
   setTimeout(() => {
@@ -7856,8 +7860,9 @@ function popCells(balls, done) {
         state.grid[b.row][b.col] = null;
       }
     }
-    // remove from balls array
-    state.balls = state.balls.filter(b => !b.popping);
+    // remove from balls array — only THIS call's balls (not every popping ball), so overlapping
+    // timer-driven auto-pops can't remove each other's in-flight balls.
+    state.balls = state.balls.filter(b => !_popSet.has(b));
 
     // compact + refill
     compactAndRefill();
@@ -9816,8 +9821,13 @@ function renderHomeAfkCard() {
 const DAILY_REWARDS = [50, 75, 100, 125, 150, 200, 250];
 
 function todayISO() {
+  // LOCAL date (not UTC) so the daily-login / daily-quest rollover matches the daily-streak,
+  // which also uses local time (_streakDateStr). toISOString() is UTC and rolled the "day" at a
+  // different instant, so near local midnight the two daily systems could disagree.
   const d = new Date();
-  return d.toISOString().slice(0, 10);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return d.getFullYear() + "-" + m + "-" + day;
 }
 function daysBetweenISO(a, b) {
   const da = new Date(a + "T00:00:00Z").getTime();
