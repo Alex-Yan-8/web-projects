@@ -2852,6 +2852,17 @@
   .lvNode .nodeBest.good { color: #2c8a2a; }
 
   /* ===================== RESPONSIVE ===================== */
+  /* Safety net: every overlay card stays within the viewport and SCROLLS instead of clipping on
+     short windows / phones. Horizontal is already handled (every card is max-width:92vw). Cards
+     that already manage an inner scroll region (cosmetics/upgrades/achievements) keep theirs. */
+  .homeCard, .selectCard, .loadoutCard, .settingsCard, .dailyCard, .livesCard,
+  .tutorialCard, .overlayCard, .pickerCard, .profileCard, .gachaCard, .streakCard {
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+
   /* Short viewports (landscape phones, small laptops): the jar already shrinks to fit via its
      height-aware width above — here we just tighten the surrounding spacing to claw back room. */
   @media (max-height: 720px) {
