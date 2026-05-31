@@ -1634,6 +1634,8 @@
     aspect-ratio: 1 / 1;
     position: relative;
     background:
+      /* top-rim specular arc — a bright glass catch-light along the upper edge */
+      radial-gradient(ellipse 58% 16% at 50% 6%, rgba(255,255,255,0.55) 0 30%, rgba(255,255,255,0.12) 60%, transparent 78%),
       /* curved glass shine streaks */
       linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.38) 40%, rgba(255,255,255,0) 47%),
       linear-gradient(118deg, rgba(255,255,255,0) 58%, rgba(255,255,255,0.16) 64%, rgba(255,255,255,0) 69%),
@@ -1654,9 +1656,14 @@
     top: 2.5%; left: 14%; right: 14%;
     height: 7%;
     border-radius: 50%;
-    background: radial-gradient(ellipse 100% 100% at 50% 45%,
-      rgba(255,255,255,0) 52%, rgba(255,255,255,0.45) 70%, rgba(255,255,255,0.12) 86%, rgba(255,255,255,0) 100%);
-    box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
+    background:
+      /* bright outer rim of the glass mouth */
+      radial-gradient(ellipse 100% 100% at 50% 38%,
+        rgba(255,255,255,0) 50%, rgba(255,255,255,0.5) 68%, rgba(255,255,255,0.12) 84%, rgba(255,255,255,0) 100%),
+      /* shaded inner lip — the inside of the mouth, giving the opening real depth */
+      radial-gradient(ellipse 90% 130% at 50% 82%,
+        rgba(60,100,130,0.34) 0 38%, rgba(60,100,130,0.10) 64%, transparent 80%);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(55,95,128,0.38);
     pointer-events: none;
     z-index: 3;
   }
@@ -6417,11 +6424,16 @@ function renderPrestige() {
   const can = canPrestigeNow();
   const newStars = prestigeNewStars();
   const power = data.prestigePower || 0;
-  const curMult = (1 + power * PRESTIGE_PER_STAR).toFixed(2);
+  const eff = (BASE_SCORE_FACTOR * (1 + power * PRESTIGE_PER_STAR)); // TRUE effective scoring (incl. the 0.8 wall)
+  const effStr = eff.toFixed(2);
   const status = document.getElementById("prestigeStatus");
   const next = prestigeUnlocksNext();
   const unlockLine = next ? `<br><span style="color:#c0392b; font-weight:800; font-size:14px;">Next prestige unlocks: ${next.label}</span>` : "";
-  status.innerHTML = `Prestige <b>${data.prestige || 0}</b> · Score <b>×${curMult}</b> <span style="color:#708096; font-weight:700;">(${power}⭐ banked)</span>${unlockLine}<br><br>` +
+  // Surface the SOFT SCORE WALL: scoring starts at ×0.8 and banking ⭐ lifts it past ×1.0.
+  const wallLine = eff < 1
+    ? `<br><span style="color:#b06a00; font-weight:800; font-size:13px;">Scoring starts at ×${BASE_SCORE_FACTOR} — bank ⭐ to push it past ×1.0 and beyond.</span>`
+    : `<br><span style="color:#2c8a2a; font-weight:800; font-size:13px;">You've pushed scoring past the ×${BASE_SCORE_FACTOR} base wall — keep banking ⭐ to climb higher.</span>`;
+  status.innerHTML = `Prestige <b>${data.prestige || 0}</b> · Scoring <b>×${effStr}</b> <span style="color:#708096; font-weight:700;">(${power}⭐ banked)</span>${wallLine}${unlockLine}<br><br>` +
     (can
       ? `<span style="color:#5a4007; font-size:14px;">Ready! Bank <b>${newStars}⭐</b> → <b>+${Math.round(newStars * PRESTIGE_PER_STAR * 100)}%</b> permanent score, and drop back just 5 levels.</span>`
       : `<span style="color:#a0aabd; font-size:14px;">Earn <b>${PRESTIGE_MIN_NEW_STARS - newStars}</b> more ⭐ to prestige. (${newStars}/${PRESTIGE_MIN_NEW_STARS} new stars)</span>`);
