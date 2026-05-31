@@ -197,7 +197,6 @@
   body[data-world="4"]::before {
     background:
       /* distant rocky mountains */
-      polygon-clip,
       linear-gradient(135deg, transparent 47%, #8a4830 48% 52%, transparent 53%) 18% 65% / 18% 35% no-repeat,
       linear-gradient(135deg, transparent 47%, #6a3828 48% 52%, transparent 53%) 50% 60% / 22% 40% no-repeat,
       linear-gradient(135deg, transparent 47%, #8a4830 48% 52%, transparent 53%) 80% 70% / 16% 30% no-repeat,
@@ -930,7 +929,6 @@
     background: conic-gradient(from -90deg, #ffd64a 0%, #ff8c42 var(--pct, 0%), rgba(0,0,0,0.15) var(--pct, 0%) 100%);
     -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%);
             mask: radial-gradient(circle, transparent 56%, #000 58%);
-    transition: --pct 0.3s ease-out;
   }
   /* Charged state */
   .powerIcon.charged {
@@ -990,32 +988,31 @@
   }
 
   /* === Cosmetics: basket skins === */
+  /* === Cosmetics: jar-glass tints (keep the glass shine, swap the body colour) === */
   body[data-basket="midnight"] #jar-wrap {
     background:
-      repeating-linear-gradient(45deg, rgba(20,15,50,0.55) 0 3px, transparent 3px 9px, rgba(20,15,50,0.55) 9px 12px, transparent 12px 18px),
-      repeating-linear-gradient(-45deg, rgba(10,5,30,0.45) 0 3px, transparent 3px 9px, rgba(10,5,30,0.45) 9px 12px, transparent 12px 18px),
-      radial-gradient(circle at 50% 45%, #6a55c4 0 55%, #3b2c80 80%, #1e1352 100%);
-    box-shadow: 0 18px 30px rgba(20,10,40,0.6), inset 0 6px 0 rgba(180,160,255,0.3), inset 0 -8px 0 rgba(0,0,0,0.35), inset 0 0 0 3px #2a1c5c;
+      linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(200,210,255,0.34) 40%, rgba(255,255,255,0) 47%),
+      linear-gradient(118deg, rgba(255,255,255,0) 58%, rgba(200,210,255,0.14) 64%, rgba(255,255,255,0) 69%),
+      radial-gradient(circle at 50% 45%, rgba(120,110,200,0.32) 0 55%, rgba(70,55,140,0.42) 80%, rgba(40,28,92,0.55) 100%);
+    box-shadow: 0 18px 30px rgba(20,10,40,0.5), inset 0 0 0 3px rgba(200,195,255,0.5), inset 0 10px 20px rgba(220,215,255,0.25), inset 0 -16px 26px rgba(40,28,92,0.45);
   }
   body[data-basket="rose"] #jar-wrap {
     background:
-      repeating-linear-gradient(45deg, rgba(180,60,100,0.55) 0 3px, transparent 3px 9px, rgba(180,60,100,0.55) 9px 12px, transparent 12px 18px),
-      repeating-linear-gradient(-45deg, rgba(140,40,80,0.45) 0 3px, transparent 3px 9px, rgba(140,40,80,0.45) 9px 12px, transparent 12px 18px),
-      radial-gradient(circle at 50% 45%, #ff9ec3 0 55%, #e35691 80%, #b22e6b 100%);
-    box-shadow: 0 18px 30px rgba(120,30,70,0.5), inset 0 6px 0 rgba(255,220,235,0.35), inset 0 -8px 0 rgba(0,0,0,0.3), inset 0 0 0 3px #8a1f4c;
+      linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,230,240,0.38) 40%, rgba(255,255,255,0) 47%),
+      linear-gradient(118deg, rgba(255,255,255,0) 58%, rgba(255,230,240,0.16) 64%, rgba(255,255,255,0) 69%),
+      radial-gradient(circle at 50% 45%, rgba(255,180,210,0.30) 0 55%, rgba(230,120,165,0.40) 80%, rgba(180,60,110,0.52) 100%);
+    box-shadow: 0 18px 30px rgba(120,30,70,0.45), inset 0 0 0 3px rgba(255,225,235,0.55), inset 0 10px 20px rgba(255,235,245,0.3), inset 0 -16px 26px rgba(180,60,110,0.4);
   }
-  /* === Cosmetics: blanket skins === */
+  /* === Cosmetics: tabletop wood stains === */
   body[data-blanket="ocean"] #picnicBlanket {
     background:
-      linear-gradient(90deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      linear-gradient(0deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      radial-gradient(ellipse 110% 100% at 50% 45%, #3a8ed9 0 50%, #2a6fb0 80%, #1f5588 100%);
+      repeating-linear-gradient(90deg, rgba(20,40,55,0) 0 54px, rgba(20,40,55,0.16) 54px 56px),
+      radial-gradient(ellipse 75% 100% at 50% 28%, #6f93a6 0%, #4a6b7e 58%, #34505e 100%);
   }
   body[data-blanket="sunset"] #picnicBlanket {
     background:
-      linear-gradient(90deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      linear-gradient(0deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      radial-gradient(ellipse 110% 100% at 50% 45%, #ffb45f 0 50%, #e87a3a 70%, #b04030 100%);
+      repeating-linear-gradient(90deg, rgba(80,30,15,0) 0 54px, rgba(80,30,15,0.16) 54px 56px),
+      radial-gradient(ellipse 75% 100% at 50% 28%, #d99257 0%, #b85f36 60%, #8c3e28 100%);
   }
   /* === Daily streak card on home === */
   #homeStreakCard:empty { display: none; }
@@ -1452,6 +1449,49 @@
   #comboHud .comboBadge.pulse { transform: scale(1.18); }
   #comboHud .comboBadge.tier2 { background: linear-gradient(180deg, #ffd866, #e8a01a); box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 16px rgba(255,200,60,0.65); }
   #comboHud .comboBadge.tier3 { background: linear-gradient(180deg, #ff7676, #c61e1e); box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 20px rgba(255,80,80,0.75); }
+  /* HYPE momentum badge — multiplier + a draining fill bar (always visible while you have momentum) */
+  #comboHud .comboBadge.hypeBadge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(180deg, #59c3ff, #2d7fd6);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 14px rgba(70,160,255,0.55);
+  }
+  #comboHud .comboBadge.hypeBadge.tier2 { background: linear-gradient(180deg, #ffd866, #e8a01a); box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 16px rgba(255,200,60,0.65); }
+  #comboHud .comboBadge.hypeBadge.tier3 { background: linear-gradient(180deg, #ff7fa8, #d6266e); box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 20px rgba(255,90,160,0.8); }
+  #comboHud .hypeMult { font-size: 15px; }
+  #comboHud .hypeBar { display: inline-block; width: 52px; height: 7px; border-radius: 5px; background: rgba(0,0,0,0.28); overflow: hidden; }
+  #comboHud .hypeFill { display: block; height: 100%; border-radius: 5px; background: rgba(255,255,255,0.9); transition: width 0.12s linear; }
+  /* FRENZY multiplier badge — rainbow, pulsing */
+  #comboHud .comboBadge.frenzyBadge {
+    background: linear-gradient(90deg,#ff4d8d,#ff8a47,#ffd93b,#6bcb77,#4dd0e1,#a06bff);
+    background-size: 300% 100%;
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    animation: frenzyBadgeShift 0.7s linear infinite, frenzyBadgePulse 0.5s ease-in-out infinite;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.18), 0 0 22px rgba(255,120,220,0.8);
+  }
+  @keyframes frenzyBadgeShift { from { background-position: 0% 50%; } to { background-position: 300% 50%; } }
+  @keyframes frenzyBadgePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+  /* ===================== FRENZY MODE — 5s disco ===================== */
+  body.frenzy #app { animation: frenzyAppGlow 0.5s linear infinite; }
+  @keyframes frenzyAppGlow {
+    0%   { box-shadow: inset 0 0 140px 16px rgba(255,40,140,0.45); }
+    25%  { box-shadow: inset 0 0 140px 16px rgba(255,170,40,0.45); }
+    50%  { box-shadow: inset 0 0 140px 16px rgba(60,210,120,0.45); }
+    75%  { box-shadow: inset 0 0 140px 16px rgba(60,180,255,0.45); }
+    100% { box-shadow: inset 0 0 140px 16px rgba(170,80,255,0.45); }
+  }
+  /* rainbow rim around the jar + a gentle scene hue-cycle for full disco */
+  body.frenzy #jar-wrap { animation: frenzyJarRim 0.6s linear infinite; }
+  @keyframes frenzyJarRim {
+    0%   { box-shadow: 0 18px 30px rgba(40,70,90,0.4), 0 0 34px 6px rgba(255,40,140,0.7),  inset 0 0 0 3px rgba(255,255,255,0.6); }
+    33%  { box-shadow: 0 18px 30px rgba(40,70,90,0.4), 0 0 34px 6px rgba(60,210,120,0.7),  inset 0 0 0 3px rgba(255,255,255,0.6); }
+    66%  { box-shadow: 0 18px 30px rgba(40,70,90,0.4), 0 0 34px 6px rgba(60,180,255,0.7),  inset 0 0 0 3px rgba(255,255,255,0.6); }
+    100% { box-shadow: 0 18px 30px rgba(40,70,90,0.4), 0 0 34px 6px rgba(170,80,255,0.7),  inset 0 0 0 3px rgba(255,255,255,0.6); }
+  }
+  body.frenzy #worldFx { animation: frenzyHue 1.2s linear infinite; }
+  @keyframes frenzyHue { from { filter: hue-rotate(0deg) saturate(1.6); } to { filter: hue-rotate(360deg) saturate(1.6); } }
+  body.frenzy #score { animation: frenzyScore 0.4s ease-in-out infinite; }
+  @keyframes frenzyScore { 0%,100% { transform: scale(1); color: #ff5ea0; } 50% { transform: scale(1.15); color: #ffd93b; } }
 
   /* In-game booster row */
   #boosterRow {
@@ -1535,93 +1575,77 @@
     filter: blur(12px);
     pointer-events: none;
   }
+  /* Wooden tabletop the glass jar sits on (receding via perspective) */
   #picnicBlanket {
     position: absolute;
-    width: 150%;
-    height: 88%;
-    left: -25%;
-    top: 38%;
-    border-radius: 16% 22% 14% 22% / 30% 38% 26% 24%;
+    width: 134%;
+    height: 60%;
+    left: -17%;
+    top: 56%;
+    border-radius: 50% / 42%;
     background:
-      /* gingham checks — white-on-red squares (muted) */
-      linear-gradient(90deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      linear-gradient(0deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 30px 30px,
-      /* base muted red — pastel picnic, not Christmas */
-      radial-gradient(ellipse 110% 100% at 50% 45%, #cc5060 0 50%, #b04050 80%, #983545 100%);
-    transform: rotate(-3deg) perspective(900px) rotateX(18deg);
-    transform-origin: 50% 30%;
-    box-shadow:
-      0 20px 36px rgba(40,15,10,0.4),
-      inset 0 -10px 18px rgba(0,0,0,0.18),
-      inset 0 6px 0 rgba(255,255,255,0.08);
+      /* plank seams */
+      repeating-linear-gradient(90deg, rgba(80,48,20,0) 0 54px, rgba(80,48,20,0.14) 54px 56px),
+      /* warm wood surface */
+      radial-gradient(ellipse 75% 100% at 50% 28%, #caa06a 0%, #ad7e46 58%, #8c6334 100%);
+    transform: perspective(800px) rotateX(56deg);
+    transform-origin: 50% 0%;
+    box-shadow: 0 18px 28px rgba(40,22,6,0.32);
     pointer-events: none;
   }
-  /* Subtle blanket-corner highlight to suggest fabric folds */
+  /* Soft sheen across the front edge of the table */
   #picnicBlanket::after {
     content: "";
     position: absolute; inset: 0;
     border-radius: inherit;
-    background:
-      radial-gradient(ellipse 30% 18% at 78% 22%, rgba(255,255,255,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 28% 16% at 22% 80%, rgba(0,0,0,0.18) 0%, transparent 65%);
+    background: radial-gradient(ellipse 42% 30% at 50% 16%, rgba(255,240,210,0.20) 0%, transparent 60%);
     pointer-events: none;
   }
 
+  /* Clear glass fruit jar — translucent so the world theme glows through it */
   #jar-wrap {
     width: min(92vw, 540px);
     aspect-ratio: 1 / 1;
     position: relative;
     background:
-      repeating-linear-gradient(45deg,
-        rgba(110,68,30,0.55) 0 3px,
-        rgba(180,120,60,0.0) 3px 9px,
-        rgba(110,68,30,0.55) 9px 12px,
-        rgba(180,120,60,0.0) 12px 18px),
-      repeating-linear-gradient(-45deg,
-        rgba(70,40,18,0.45) 0 3px,
-        rgba(180,120,60,0.0) 3px 9px,
-        rgba(70,40,18,0.45) 9px 12px,
-        rgba(180,120,60,0.0) 12px 18px),
-      radial-gradient(circle at 50% 45%, #d9a76a 0 55%, #b07c40 80%, #8a5a2a 100%);
+      /* curved glass shine streaks */
+      linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.38) 40%, rgba(255,255,255,0) 47%),
+      linear-gradient(118deg, rgba(255,255,255,0) 58%, rgba(255,255,255,0.16) 64%, rgba(255,255,255,0) 69%),
+      /* translucent glass body — cool blue-green tint, see-through */
+      radial-gradient(circle at 50% 45%, rgba(222,245,255,0.26) 0 55%, rgba(166,208,230,0.34) 80%, rgba(120,162,188,0.46) 100%);
     border-radius: 50%;
     box-shadow:
-      0 18px 30px rgba(60,30,10,0.5),
-      inset 0 6px 0 rgba(255,220,170,0.3),
-      inset 0 -8px 0 rgba(0,0,0,0.28),
-      inset 0 0 0 3px #6b4423;
+      0 18px 30px rgba(40,70,90,0.40),
+      inset 0 0 0 3px rgba(255,255,255,0.55),     /* bright glass rim */
+      inset 0 10px 20px rgba(255,255,255,0.32),    /* top inner light */
+      inset 0 -16px 26px rgba(70,110,140,0.34);    /* bottom inner depth */
     overflow: hidden;
   }
-  /* Gingham cloth wrapped over the top of the basket — matches the picnic blanket */
+  /* Open glass mouth — just a clear rim highlight (no opaque lid), so fruit drop in through the top */
   #jar-wrap::before {
     content: "";
     position: absolute;
-    top: 3%; left: 7%; right: 7%;
-    height: 11%;
-    background:
-      /* gingham — same scale & color as the blanket for cohesion */
-      linear-gradient(90deg, rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 22px 22px,
-      linear-gradient(0deg,  rgba(255,255,255,0.28) 0 50%, transparent 50% 100%) 0 0 / 22px 22px,
-      /* base muted red with subtle curvature shading along the lip */
-      radial-gradient(ellipse 130% 220% at 50% -110%, #d6505a 0%, #c0404e 55%, #9a2a3a 100%);
-    border-radius: 50% 50% 40% 40% / 90% 90% 100% 100%;
-    box-shadow:
-      0 4px 8px rgba(0,0,0,0.30),
-      inset 0 -3px 4px rgba(0,0,0,0.22),
-      inset 0 3px 0 rgba(255,255,255,0.18);
+    top: 2.5%; left: 14%; right: 14%;
+    height: 7%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse 100% 100% at 50% 45%,
+      rgba(255,255,255,0) 52%, rgba(255,255,255,0.45) 70%, rgba(255,255,255,0.12) 86%, rgba(255,255,255,0) 100%);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
+    pointer-events: none;
     z-index: 3;
   }
-  /* Inner well — playfield interior */
+  /* Inner well — glassy, translucent interior so fruit reads clearly over the world behind */
   #jar-wrap::after {
     content: "";
     position: absolute;
     inset: 7%;
     border-radius: 50%;
     background:
-      radial-gradient(circle at 38% 28%, rgba(255,255,255,0.15), transparent 55%),
-      radial-gradient(circle at 50% 50%, #c89668 0 55%, #a06f3e 100%);
+      radial-gradient(circle at 40% 26%, rgba(255,255,255,0.30), transparent 52%),
+      radial-gradient(circle at 50% 60%, rgba(228,246,255,0.10) 0 55%, rgba(150,196,222,0.20) 100%);
     box-shadow:
-      inset 0 6px 14px rgba(80,40,10,0.45),
-      inset 0 -3px 8px rgba(255,200,140,0.15);
+      inset 0 8px 16px rgba(255,255,255,0.22),
+      inset 0 -10px 18px rgba(70,110,140,0.30);
     pointer-events: none;
     z-index: 1;
   }
@@ -1735,6 +1759,13 @@
     animation: overlayIn 0.4s ease-out;
     max-width: 90vw;
   }
+  /* Failed-level variant — warm red wash so a loss reads instantly differently from a win */
+  .overlayCard.failed {
+    background: linear-gradient(180deg, #fff1f1, #ffe0e0);
+    border-color: #ffd0d0;
+    box-shadow: 0 8px 0 rgba(180,80,80,0.4), 0 16px 36px rgba(80,20,20,0.45);
+  }
+  .overlayCard.failed h2 { color: #d8434a; }
   @keyframes overlayIn {
     0% { transform: scale(0.7); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
@@ -3450,12 +3481,10 @@
     <div class="homeModeRow">
       <button class="homeModeBtn" id="cosmeticsHomeBtn" type="button">🎨 Cosmetics</button>
       <button class="homeModeBtn" id="petsHomeBtn" type="button">🐾 Pets</button>
-      <button class="homeModeBtn" id="eventHomeBtn" type="button">🎪 Event</button>
     </div>
     <div class="homeModeRow">
       <button class="homeModeBtn" id="seasonHomeBtn" type="button">🏵️ Season</button>
       <button class="homeModeBtn" id="prestigeHomeBtn" type="button">✨ Prestige</button>
-      <button class="homeModeBtn" id="tournamentHomeBtn" type="button">🏆 Tourney</button>
     </div>
     <div id="homeStreakCard"></div>
     <div id="homeAfkCard"></div>
@@ -3581,11 +3610,11 @@
     </div>
     <h2 class="profileTitle" style="text-align:center; margin: 6px 0 4px;">🎨 Cosmetics</h2>
     <div class="cosmeticsSection">
-      <div class="cosmeticsSectionTitle">Basket</div>
+      <div class="cosmeticsSectionTitle">Jar</div>
       <div class="cosmeticsRow" id="cosmeticsBasketRow"></div>
     </div>
     <div class="cosmeticsSection">
-      <div class="cosmeticsSectionTitle">Blanket</div>
+      <div class="cosmeticsSectionTitle">Table</div>
       <div class="cosmeticsRow" id="cosmeticsBlanketRow"></div>
     </div>
     <div class="cosmeticsSection">
@@ -3765,18 +3794,48 @@
 /* ---------------------- CONSTANTS ---------------------- */
 const COLS = 6;
 const ROWS = 7;
-// Total fruit cap — refill backs off once at-or-above this so the bowl doesn't overcrowd
-// (powerups don't count; only non-popping fruits do)
-const FRUIT_CAP = 38;
+// Total fruit "area budget" — refill backs off once the bowl's used area reaches this, so a
+// few big merged fruits crowd out new spawns (powerups don't count; only non-popping fruits do).
+// Measured in size-1-fruit areas (each ~1 unit), NOT a flat count — see compactAndRefill.
+const FRUIT_CAP = 30;
+// Hard ceiling on how large a single fruit can render/collide, so a big merge always fits the
+// bowl instead of being squeezed out and shot around.
+const MAX_EFFECTIVE_SCALE = 5;
+// Overflow "jackpot": once the bowl's used area exceeds this (e.g. after spamming a grow power like
+// Orange), it's physically over-capacity and would squeeze/jitter — so the biggest fruit auto-bursts
+// for big points + shake until the bowl fits again. Must be > FRUIT_CAP so normal play never trips it.
+// --- FRENZY: a 5-second disco window with a ramping ×2→×5 score multiplier, triggered once per level
+// at the halfway mark (boss half-health). No auto-popping — just a reward window. ---
+const FRENZY_DURATION  = 5000; // ms of disco + multiplier
+const FRENZY_MULT_MIN  = 2;    // multiplier at the start of the frenzy…
+const FRENZY_MULT_MAX  = 5;    // …ramping up to this the more you score…
+const FRENZY_MULT_STEP = 0.25; // …by this much per scoring pop
+// --- Difficulty: hard move cap + timed levels (a level can now be LOST, not just won) ---
+const MOVE_LIMIT_MULT = 2.5; // hard chain cap = ceil(parMoves × this). Run out before the target = fail.
+                             //   Generous starting point (targets were tuned for unlimited moves) — tighten after playtest.
+const BOSS_TIME_BASE  = 75;  // boss-level countdown = BOSS_TIME_BASE + level×3 seconds (scales so the
+                             //   high-target late bosses aren't impossible); 0 base = untimed bosses
 
 const GRAVITY     = 2000;
-const DAMPING     = 0.55;   // higher = more bounce (jelly!)
+const DAMPING     = 0.45;   // ball-ball restitution — springy but settles (was 0.55, too bouncy to rest)
 const FRICTION    = 0.92;   // less horizontal drag, things slide more
+const AIR_DRAG    = 0.985;  // gentle per-frame velocity bleed so piles actually dissipate and settle
 const SETTLE_V    = 0.5;
 const WALL_BOUNCE = 0.45;   // bouncier walls
 const COLLISION_ITERS = 4;
 const SQUASH_DECAY = 8;     // higher = faster jiggle settle
 const SQUASH_STIFF = 70;    // higher = quicker return to round (spring k)
+// --- Settling: calm the "heated gas particle" churn down to a GENTLE simmer (no freeze/sleep, so
+// gravity always applies and fruits never get stuck floating — just calm, lightly-alive motion) ---
+const REST_BOUNCE_V    = 150;  // below this approach speed, contacts don't bounce (no micro-jitter)
+const CONTACT_FRICTION = 0.3;  // tangential friction at fruit-fruit contacts — bleeds rolling/sliding
+const CALM_SPEED       = 120;  // a fruit slower than this *may* be settling…
+const CALM_NEED        = 10;   // …but only after this many consecutive slow frames (a fruit just
+                               //   starting to free-fall is slow for only ~3 frames, so it drops at
+                               //   full speed; only genuinely-settling pile fruit gets damped)
+const CALM_DAMP        = 0.45; // extra velocity bleed once a fruit qualifies as "settling"
+const POP_GRACE        = 15;   // frames of "no settle-damping" granted to every fruit after a pop/
+                               //   merge/refill, so surrounding fruit fall fast to fill the gap
 
 const FRUITS = [
   { type: "apple",  emoji: "🍎", color: "#e74c3c", hi: "#ff8a7a", material: "glossy",  powerName: "Trade",        desc: "Convert all apples on the board into a fruit you pick" },
@@ -4210,6 +4269,9 @@ function makeBall(row, col, fruit, opts = {}) {
     size: opts.size || 1,
     x: opts.startX != null ? opts.startX : (col + 0.5) * cellW,
     y: opts.startY != null ? opts.startY : (row + 0.5) * cellH,
+    // Spawned from above the jar → "entering": allowed to fall in through the open top once, then it's
+    // a kept-in fruit (the top becomes a one-way wall). Cleared when it lands / gets inside the bowl.
+    entering: opts.startY != null,
     vx: 0, vy: 0,
     scale: 0.92 + Math.random() * 0.1,
     popping: false,
@@ -4234,8 +4296,8 @@ function sizeMultiplier(size) {
   return Math.min(10, 1 + Math.pow(size - 1, 0.6) * 0.15);
 }
 function effectiveScale(b) {
-  // Absolute hard cap so nothing can ever render larger than 12x R
-  return Math.min(12, b.scale * sizeMultiplier(b.size || 1));
+  // Absolute hard cap so a big merged fruit always fits the bowl (and can't be squeezed out).
+  return Math.min(MAX_EFFECTIVE_SCALE, b.scale * sizeMultiplier(b.size || 1));
 }
 
 /* ---------------------- INIT BOARD ---------------------- */
@@ -4343,6 +4405,24 @@ function startLevel(i, fromPlayer = false) {
   state.lastChainAt = 0;
   renderComboHUD();
   const lv = LEVELS[i % LEVELS.length];
+  // Fail conditions: a hard chain cap (all levels) + a countdown (boss/timed levels). Endless never
+  // fails this way. Reset the per-level win/lose flags so a fresh attempt isn't instantly resolved.
+  state._completed = false;
+  state._failed = false;
+  // Endless never fails this way; the L1 tutorial is also exempt so a fumbling new player can't fail it.
+  const noFail = !!state._startingEndless || i === 0;
+  state.moveLimit = noFail ? 0 : (lv.moveLimit || Math.ceil((lv.parMoves || 20) * MOVE_LIMIT_MULT));
+  state.timeLimit = noFail ? 0 : (lv.timeLimit != null ? lv.timeLimit : (lv.boss ? BOSS_TIME_BASE + i * 3 : 0));
+  state.timeLeft = state.timeLimit;
+  state._lastTimerSec = -1;
+  // Reset Hype meter + the once-per-level frenzy
+  state.hype = 0;
+  state.hypeLastPop = 0;
+  state._frenzyFired = false;
+  state.frenzyUntil = 0;
+  state.frenzyMult = 1;
+  document.body.classList.remove("frenzy");
+  const _ch = document.getElementById("comboHud"); if (_ch) { _ch.innerHTML = ""; _ch.dataset.mode = ""; }
   document.getElementById("levelTag").textContent = "Level " + (i + 1);
   if (lv.boss) {
     renderBossPanel(lv);
@@ -4385,13 +4465,33 @@ function _movesLineHtml(lv) {
   if (moves <= star3) pip = `<span class="movesPip ok">3★ ≤ ${star3}</span>`;
   else if (moves <= star2) pip = `<span class="movesPip mid">2★ ≤ ${star2}</span>`;
   else pip = `<span class="movesPip low">1★</span>`;
-  return `<span class="movesNum">👣 ${moves}</span> · ${pip}`;
+  // Moves REMAINING when there's a hard cap (colour-coded as it runs low); plain count otherwise.
+  let movesPart;
+  if (state.moveLimit) {
+    const left = Math.max(0, state.moveLimit - moves);
+    const cls = left <= 3 ? "low" : left <= 6 ? "mid" : "ok";
+    movesPart = `<span class="movesNum ${cls}">👣 ${left} left</span>`;
+  } else {
+    movesPart = `<span class="movesNum">👣 ${moves}</span>`;
+  }
+  // Countdown for timed levels.
+  let timePart = "";
+  if (state.timeLimit) {
+    const t = Math.max(0, Math.ceil(state.timeLeft || 0));
+    const mm = Math.floor(t / 60), ss = String(t % 60).padStart(2, "0");
+    const cls = t <= 10 ? "low" : t <= 20 ? "mid" : "ok";
+    timePart = ` · <span class="movesPip ${cls}">⏱️ ${mm}:${ss}</span>`;
+  }
+  return `${movesPart} · ${pip}${timePart}`;
 }
 
 function updateMovesLine() {
-  const el = document.getElementById("movesLine");
-  if (!el) return;
   const lv = LEVELS[state.level % LEVELS.length];
+  // Both panels carry a .movesLine (same id) — target the ACTIVE panel so boss-level moves/timer
+  // update the visible one, not a hidden leftover from a previous level.
+  const panel = document.getElementById(lv.boss ? "bossPanel" : "objectivePanel");
+  const el = panel ? panel.querySelector(".movesLine") : document.getElementById("movesLine");
+  if (!el) return;
   el.innerHTML = _movesLineHtml(lv);
 }
 
@@ -4585,7 +4685,6 @@ function showApplePicker() {
   ).length;
   if (appleCount === 0) {
     showBanner("NO APPLES TO CONVERT");
-    console.log("[POWER] Apple Trade: no apples on board — charge preserved");
     return false; // signals: don't consume charge
   }
   const overlay = document.getElementById("applePicker");
@@ -4641,7 +4740,6 @@ function pickApplePickerTarget(fruit) {
   state.busy = false;
   const totalChanged = apples.length + extras;
   showBanner(`APPLE → ${fruit.emoji.toUpperCase()} ×${totalChanged}`);
-  console.log(`[POWER] Apple Trade T${tier}: ${apples.length} apples + ${extras} extras → ${fruit.type}, size +${sizeBoost}`);
 
   // Boss bonus (15% target score) fires after conversion confirmed
   const lv = LEVELS[state.level % LEVELS.length];
@@ -4726,7 +4824,6 @@ function applyBananaPower() {
       setTargetSize(b, (b.targetSize != null ? b.targetSize : (b.size || 1)) + allClusterBoost);
     }
   }
-  console.log(`[POWER] Banana Shuffle T${tier}: ${eligible.length} bubbles re-grouped (center+${centerBoost}, all+${allClusterBoost})`);
   return eligible.length;
 }
 
@@ -4766,7 +4863,6 @@ function applyGrapePower() {
     chosen[superIdx].explosiveSplashMult = 5.0;
     setTargetSize(chosen[superIdx], Math.max(8, chosen[superIdx].targetSize || 6));
   }
-  console.log(`[POWER] Cluster Bomb T${tier}: armed ${chosen.length} grapes, splash×${splashMult}${hasSuper ? ", +1 SUPER ×5" : ""}`);
   return chosen.length;
 }
 
@@ -4818,7 +4914,6 @@ function applyStrawberryPower() {
       }
     }
   }
-  console.log(`[POWER] Strawberry Garden Bomb T${tier}: grew ${chosen.length} bubbles, mega=${megaSize}`);
   return chosen.length + (megaSize > 0 ? 1 : 0);
 }
 
@@ -4828,7 +4923,6 @@ function applyCherryPower() {
   const uses = [0, 3, 4, 5, 8, 12][tier]   || 12;
   const mult = [0, 2, 2.5, 3, 4, 5][tier]  || 5;
   state.cherryBuff = { uses, mult, until: performance.now() + 60000 };
-  console.log(`[POWER] Cherry Sweet Frenzy T${tier}: ${uses} pops at ×${mult}`);
   return uses;
 }
 
@@ -4839,7 +4933,6 @@ function applyKiwiPower() {
   const factor   = [1, 0.5, 0.4, 0.3, 0.05, 0][tier]; // T5 = full freeze
   state.slowMoUntil = performance.now() + duration * 1000;
   state.slowMoFactor = factor;
-  console.log(`[POWER] Kiwi Time Stop T${tier}: ${duration}s at ${factor}×`);
   return duration;
 }
 
@@ -4876,7 +4969,6 @@ function applyMangoPower() {
       popCells(alive, () => { state.busy = false; afterMove(); });
     }, 1500);
   }
-  console.log(`[POWER] Mango Storm T${tier}: ${chosen.length} mangos size ${sz}`);
   return chosen.length;
 }
 
@@ -4917,7 +5009,6 @@ function applyCoconutPower() {
   shakeScreen(2.5 + scoreMult, 380 + 80 * scoreMult);
   state.busy = true;
   popCells(victims, () => { state.busy = false; afterMove(); });
-  console.log(`[POWER] Coconut Demolition T${tier}: popped ${victims.length} × ${scoreMult} = ${total}`);
   return victims.length;
 }
 
@@ -4950,7 +5041,6 @@ function applyBlueberryPower() {
       }, 400);
     }
   }
-  console.log(`[POWER] Blueberry Overcharge T${tier}: +${boost}% to ${bumped} powers, auto=${tier >= 5}`);
   return bumped;
 }
 
@@ -4977,7 +5067,6 @@ function applyOrangePower() {
     const lucky = candidates[Math.floor(Math.random() * candidates.length)];
     spawnPowerupBall({ x: lucky.x, y: lucky.y - 30, sourceRadius: R * 1.6 });
   }
-  console.log(`[POWER] Sunshine T${tier}: +${boost} all${giantBoost ? ", +1 giant" : ""}${freePowerup ? ", +1 ⭐" : ""}`);
   return candidates.length;
 }
 
@@ -5019,7 +5108,6 @@ function activatePower(type) {
   if (type === "mango")      { affected = applyMangoPower();      showBanner(`TWIN DROP ×${affected}`); }
   if (type === "coconut")    { affected = applyCoconutPower();    if (affected > 0) showBanner(`SMASH ×${affected}`); }
   if (type === "blueberry")  { affected = applyBlueberryPower();  showBanner(`POWER SURGE ×${affected}`); }
-  console.log(`[POWER] activate ${type} → affected ${affected} bubbles`);
 
   // On boss levels, utility powers (not grape — grape generates score via cascade)
   // also fly a small ~15% target-score blast at the boss so the charge isn't wasted.
@@ -5079,19 +5167,26 @@ function flyBlast(fromRect, toRect, onArrive) {
 }
 
 /* ---------------------- SCORE ---------------------- */
-function comboMult() {
-  const c = state.combo || 0;
-  if (c >= 6) return 3.0;
-  if (c >= 4) return 2.0;
-  if (c >= 2) return 1.5;
-  return 1.0;
-}
+// --- HYPE meter: the score multiplier is now a continuous momentum bar driven by POPS (the scoring
+// action), not rapid merges. Every pop raises it (bigger fruit raises it more → rewards building big),
+// and it decays smoothly when you stop. Always on-screen. The FRENZY multiplier stacks on top. ---
+const HYPE_MAX   = 5;    // max score multiplier at a full meter
+const HYPE_GRACE = 600;  // ms after a pop before the meter starts to drain
+const HYPE_DECAY = 0.32; // meter (0..1) lost per second when idle (~3s from full → empty)
+function hypeGain(size) { return Math.min(0.18, 0.03 + size * 0.007); } // per-pop gain, scaled by fruit size
+function hypeMult() { return 1 + (state.hype || 0) * (HYPE_MAX - 1); }
+// Legacy rapid-merge combo — kept only for the biggestCombo stat + animal cheers; no longer scores.
+function comboMult() { return 1.0; }
 function addScore(amount) {
   const evMult = state.eventMode === "score" ? 1.5 : 1;
   // Endless mode pays out 1.5× score in-game (was 2×) — still rewarding, but milestones
   // require real play rather than auto-cranking.
   const endlessMult = state.endless ? 1.5 : 1.0;
-  amount = Math.round(amount * comboMult() * petBonus("score") * evMult * prestigeBonus() * endlessMult);
+  // FRENZY: ×2→×5 during the 5s disco window, ramping up the more you score.
+  const frenzy = (state.frenzyUntil && performance.now() < state.frenzyUntil) ? (state.frenzyMult || FRENZY_MULT_MIN) : 1;
+  // HYPE meter is the main multiplier now (built by pops); frenzy stacks on top.
+  amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * prestigeBonus() * endlessMult * frenzy);
+  if (frenzy > 1) state.frenzyMult = Math.min(FRENZY_MULT_MAX, (state.frenzyMult || FRENZY_MULT_MIN) + FRENZY_MULT_STEP);
   state.scoreAnimFrom = state.displayedScore;
   state.score += amount;
   state.scoreAnimTo = state.score;
@@ -5102,6 +5197,7 @@ function addScore(amount) {
   const lv = LEVELS[state.level % LEVELS.length];
   if (lv.boss) updateBossUI();
   else updateObjectiveBars();
+  checkMidLevelFrenzy(); // halfway to the target (boss half-HP) → fire the disco frenzy once
 }
 
 function updateScoreDisplay(now) {
@@ -5155,7 +5251,8 @@ function tickDailyStreak() {
     if (delta === 1) data.streakDay = (data.streakDay || 0) + 1;
     else if (delta > 1) {
       data.streakDay = 1;
-      data.streakRewardsClaimed = []; // streak broken → can re-earn lower tiers
+      // NOTE: do NOT clear streakRewardsClaimed — these are one-time milestones. Clearing them on a
+      // break let players re-farm the day-1 reward indefinitely by skipping a day on purpose.
     }
   }
   data.streakLastDate = today;
@@ -5343,6 +5440,13 @@ const BOT_POOL = [
 // orbiting the level's par moves so the race feels competitive but beatable.
 function startTournament() {
   const data = Save.load();
+  // One tournament reward per day — block starting a fresh one after you've already claimed today
+  // (this closes the "claim → reset → reroll an easy level/bots → claim again" farming loop).
+  if (data.lastTournamentClaim === todayISO()) {
+    showBanner("🏆 Next tournament tomorrow!");
+    renderTournament();
+    return;
+  }
   const now = Date.now();
   // Pick featured level: roughly mid-difficulty for the player.
   const maxIdx = Math.min(LEVELS.length - 1, data.unlocked);
@@ -5546,6 +5650,7 @@ function claimTournament() {
   data.coins = (data.coins || 0) + coins;
   data.stats.coinsEarned = (data.stats.coinsEarned || 0) + coins;
   t.claimed = true;
+  data.lastTournamentClaim = todayISO(); // one tournament reward per day (see startTournament gate)
   Save.save(data);
   if (gems > 0) gainGems(gems, `tourney rank #${place}`);
   showBanner(label);
@@ -5942,14 +6047,14 @@ function buyOrEquipPet(p) {
 /* ---------------------- COSMETICS ---------------------- */
 const COSMETICS = {
   basket: [
-    { id: "default",  name: "Wicker",   cost: 0,    swatch: "linear-gradient(135deg,#d9a76a,#8a5a2a)" },
-    { id: "midnight", name: "Midnight", cost: 600,  swatch: "linear-gradient(135deg,#6a55c4,#1e1352)" },
-    { id: "rose",     name: "Rose",     cost: 600,  swatch: "linear-gradient(135deg,#ff9ec3,#b22e6b)" }
+    { id: "default",  name: "Clear Glass", cost: 0,    swatch: "linear-gradient(135deg,#eafaff,#9cc6dd)" },
+    { id: "midnight", name: "Midnight",    cost: 600,  swatch: "linear-gradient(135deg,#9b8cd8,#3b2c80)" },
+    { id: "rose",     name: "Rose",        cost: 600,  swatch: "linear-gradient(135deg,#ffc0d8,#c44e86)" }
   ],
   blanket: [
-    { id: "default", name: "Gingham", cost: 0,   swatch: "radial-gradient(ellipse,#cc5060,#983545)" },
-    { id: "ocean",   name: "Ocean",   cost: 500, swatch: "radial-gradient(ellipse,#3a8ed9,#1f5588)" },
-    { id: "sunset",  name: "Sunset",  cost: 500, swatch: "radial-gradient(ellipse,#ffb45f,#b04030)" }
+    { id: "default", name: "Oak Table", cost: 0,   swatch: "radial-gradient(ellipse,#caa06a,#8c6334)" },
+    { id: "ocean",   name: "Drift Wood", cost: 500, swatch: "radial-gradient(ellipse,#6f93a6,#34505e)" },
+    { id: "sunset",  name: "Cherry Wood",cost: 500, swatch: "radial-gradient(ellipse,#d99257,#8c3e28)" }
   ],
   particle: [
     { id: "default", name: "Fruit",   cost: 0,   swatch: "linear-gradient(135deg,#ff9070,#ffd866,#7ec47e,#7eb8d9)" },
@@ -6049,21 +6154,10 @@ function animalCheer(big = false) {
   setTimeout(() => emoji.classList.remove(cls), big ? 800 : 600);
 }
 
-function renderComboHUD(pulse = false) {
-  const hud = document.getElementById("comboHud");
-  if (!hud) return;
-  const c = state.combo || 0;
-  if (c < 2) { hud.innerHTML = ""; return; }
-  const mult = comboMult();
-  const tier = mult >= 3 ? "tier3" : mult >= 2 ? "tier2" : "";
-  const icon = mult >= 3 ? "🔥" : mult >= 2 ? "⚡" : "✨";
-  hud.innerHTML = `<div class="comboBadge ${tier}${pulse ? " pulse" : ""}">${icon} COMBO ×${mult} · ${c}</div>`;
-  if (pulse) {
-    setTimeout(() => {
-      const badge = hud.querySelector(".comboBadge");
-      if (badge) badge.classList.remove("pulse");
-    }, 180);
-  }
+// Legacy combo HUD is superseded by the Hype meter — keep the name as a thin alias so old callers
+// just refresh the Hype HUD instead of drawing a (now-meaningless) combo badge.
+function renderComboHUD() {
+  updateHypeHUD();
 }
 
 // Combo decays after 6s of inactivity
@@ -6149,12 +6243,25 @@ function applyImpact(b, nx, ny, mag) {
   if (b.squash < -0.3) b.squash = -0.3;
 }
 
+// A pop / merge / refill disturbs the pile. Give every fruit a brief grace window where the settle
+// damping is OFF (negative settle-frame counter), so the surrounding fruit fall at full speed to
+// fill the new gap before the gentle calming kicks back in. Call on any board change.
+function jostle() {
+  for (const b of state.balls) b._settleFrames = -POP_GRACE;
+}
+
 function physicsTick(dt) {
   dt = Math.min(dt, 0.05);
   // Kiwi "Slow Time" — scale dt down while buff is active
   if (state.slowMoUntil && performance.now() < state.slowMoUntil) {
     dt *= (state.slowMoFactor || 0.5);
   }
+  // Frame-rate-independent friction factor: pow(FRICTION, dt*60) matches the old per-frame
+  // `*= FRICTION` at 60fps but feels identical at 120/144 Hz instead of over-damping.
+  const fricFactor = Math.pow(FRICTION, dt * 60);
+  const wallFric   = Math.pow(0.92, dt * 60);
+  const dragFactor = Math.pow(AIR_DRAG, dt * 60);  // gentle global bleed so piles dissipate & settle
+  const calmFactor = Math.pow(CALM_DAMP, dt * 60); // extra bleed applied only to slow (settling) fruit
   // bowl center + inner radius (the playable circle)
   const cx = W / 2;
   const cy = H / 2;
@@ -6164,7 +6271,8 @@ function physicsTick(dt) {
   for (const b of state.balls) {
     if (b.popping || b._merging) continue;
     b.vy += GRAVITY * dt;
-    b.vx *= FRICTION;
+    b.vx *= fricFactor * dragFactor;
+    b.vy *= dragFactor;
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     const rr = R * effectiveScale(b);
@@ -6175,9 +6283,13 @@ function physicsTick(dt) {
     const dist = Math.hypot(dx, dy);
     const maxDist = bowlR - rr;
     if (dist > maxDist) {
-      if (b.y < cy - bowlR * 0.85 && b.vy >= 0) {
-        // still falling in from above; let gravity carry it
+      // ONE-WAY TOP: only a still-"entering" fruit (spawned above, dropping in) may pass the wall, and
+      // only through the open mouth (upper half). Everything else is clamped IN — settled/overflowing
+      // fruit can never phase out the top; they squeeze together inside instead.
+      if (b.entering && b.vy >= 0 && b.y < cy) {
+        // still dropping in through the open top; let gravity carry it
       } else {
+        b.entering = false; // it met the wall — from now on it's a kept-in fruit
         const nx = dx / (dist || 1);
         const ny = dy / (dist || 1);
         b.x = cx + nx * maxDist;
@@ -6191,11 +6303,13 @@ function physicsTick(dt) {
           applyImpact(b, nx, ny, vn);
         }
         // tangential friction so they roll/settle
-        b.vx *= 0.92;
-        b.vy *= 0.92;
+        b.vx *= wallFric;
+        b.vy *= wallFric;
         if (Math.abs(b.vy) < SETTLE_V) b.vy = 0;
         if (Math.abs(b.vx) < SETTLE_V) b.vx = 0;
       }
+    } else {
+      b.entering = false; // fully inside the bowl now
     }
   }
 
@@ -6217,13 +6331,18 @@ function physicsTick(dt) {
         const min = R * (sa + sc);
         if (dist > 0 && dist < min) {
           const overlap = (min - dist);
+          // An entering fruit that lands on the pile at/below the rim is now "in" → drop its entering
+          // pass so the one-way top wall keeps it from being shoved back out.
+          if (a.entering && a.y > cy - bowlR) a.entering = false;
+          if (c.entering && c.y > cy - bowlR) c.entering = false;
           const nx = dx / dist;
           const ny = dy / dist;
           const ma = a.size || 1;
           const mc = c.size || 1;
           const totalM = ma + mc;
-          // Soft positional correction (only 80% — leaves a tiny overlap so jelly looks compressed)
-          const corr = overlap * 0.8;
+          // Firm positional correction (95%) — keeps borders SOLID (fruits push, never phase through)
+          // while leaving only a hair of overlap for the jelly-compression look.
+          const corr = overlap * 0.95;
           a.x -= nx * corr * (mc / totalM);
           a.y -= ny * corr * (mc / totalM);
           c.x += nx * corr * (ma / totalM);
@@ -6233,17 +6352,25 @@ function physicsTick(dt) {
             const rvy = c.vy - a.vy;
             const vn = rvx * nx + rvy * ny;
             if (vn < 0) {
-              // elastic impulse (1 + DAMPING factor) — jelly is springy
-              const e = DAMPING; // restitution
-              const imp = -(1 + e) * vn / (1 / ma + 1 / mc);
-              const ix = imp * nx;
-              const iy = imp * ny;
-              a.vx -= ix / ma;
-              a.vy -= iy / ma;
-              c.vx += ix / mc;
-              c.vy += iy / mc;
-              // squash both balls along impact normal
+              // Springy for real impacts, but no bounce for gentle resting contact (kills the
+              // perpetual micro-bouncing that kept packed fruits vibrating).
               const speed = Math.abs(vn);
+              const e = speed < REST_BOUNCE_V ? 0 : DAMPING; // restitution
+              const imp = -(1 + e) * vn / (1 / ma + 1 / mc);
+              a.vx -= imp * nx / ma;
+              a.vy -= imp * ny / ma;
+              c.vx += imp * nx / mc;
+              c.vy += imp * ny / mc;
+              // Tangential contact friction — bleeds the rolling/sliding energy that otherwise keeps
+              // fruits perpetually circling the round bowl floor (the main source of the gas-jitter).
+              const tx = -ny, ty = nx;
+              const vt = rvx * tx + rvy * ty;
+              const fImp = -vt * CONTACT_FRICTION / (1 / ma + 1 / mc);
+              a.vx -= fImp * tx / ma;
+              a.vy -= fImp * ty / ma;
+              c.vx += fImp * tx / mc;
+              c.vy += fImp * ty / mc;
+              // squash both balls along impact normal
               applyImpact(a, -nx, -ny, speed);
               applyImpact(c, nx, ny, speed);
             }
@@ -6258,12 +6385,27 @@ function physicsTick(dt) {
       const dy = b.y - cy;
       const dist = Math.hypot(dx, dy);
       const maxDist = bowlR - rr;
-      if (dist > maxDist && !(b.y < cy - bowlR * 0.85 && b.vy >= 0)) {
+      if (dist > maxDist && !(b.entering && b.vy >= 0 && b.y < cy)) {
         const nx = dx / (dist || 1);
         const ny = dy / (dist || 1);
         b.x = cx + nx * maxDist;
         b.y = cy + ny * maxDist;
       }
+    }
+  }
+
+  // ---------- settle: fruits that have been slow for a while bleed extra energy, so the pile calms
+  // to a gentle simmer instead of churning like gas. The consecutive-frame gate (CALM_NEED) is what
+  // keeps gravity feeling strong: a fruit just starting to free-fall is slow for only 1-2 frames, so
+  // it never qualifies and drops at full speed — only genuinely-settling fruit gets damped. No freeze,
+  // so nothing ever floats; the bowl stays lightly alive instead of dead-frozen. -----------------
+  for (const b of state.balls) {
+    if (b.popping || b._merging) continue;
+    if (Math.hypot(b.vx, b.vy) < CALM_SPEED) {
+      b._settleFrames = (b._settleFrames || 0) + 1;
+      if (b._settleFrames > CALM_NEED) { b.vx *= calmFactor; b.vy *= calmFactor; }
+    } else {
+      b._settleFrames = 0;
     }
   }
 
@@ -6761,6 +6903,13 @@ canvas.addEventListener("touchcancel", onUp, { passive: false });
 // NOT awarded yet — score only comes when the merged fruit is later tapped).
 function processChain(chain) {
   if (chain.length < 3) return;
+  // Hard move cap reached: no more chains. The player can still POP existing merged fruit and fire
+  // charged powers to reach the target (those cost no moves); failure is decided in afterMove().
+  if (state.moveLimit && state.moveCount >= state.moveLimit) {
+    showBanner("NO MOVES LEFT — pop your fruit!");
+    Sound.play("pop");
+    return;
+  }
 
   const last = chain[chain.length - 1];
   // Can't merge into a frozen fruit — give it a small shake and cancel
@@ -6782,15 +6931,12 @@ function processChain(chain) {
   Stats.bump("chainsCount");
   Stats.max("biggestChain", chain.length);
   tutorialOnChain();
-  // Combo: rapid chains (within 6s of each other) stack a score multiplier
+  // Rapid-chain combo counter — kept for the biggestCombo stat + animal cheers only (scoring is now
+  // driven by the Hype meter, which builds on pops). No combo banners / no combo multiplier.
   const now = performance.now();
   if (now - (state.lastChainAt || 0) <= COMBO_WINDOW_MS) state.combo = (state.combo || 0) + 1;
   else state.combo = 1;
   state.lastChainAt = now;
-  if (state.combo >= 6)      { showBanner(`🔥 COMBO ×3!  (${state.combo})`); }
-  else if (state.combo >= 4) { showBanner(`⚡ COMBO ×2!  (${state.combo})`); }
-  else if (state.combo >= 2) { showBanner(`✨ COMBO ×1.5! (${state.combo})`); }
-  renderComboHUD(true);
   Stats.max("biggestCombo", state.combo);
   // Animal reaction: cheer on bigger chains / combos
   if (chain.length >= 7 || state.combo >= 4) animalCheer(true);
@@ -7005,6 +7151,7 @@ function animateMergeAndPop(consumed, survivor, done) {
     // suspend physics on these during the homing tween
     b._merging = true;
   }
+  jostle(); // let the survivor's neighbours react to the merge instead of staying calm-locked
 
   function step() {
     const now = performance.now();
@@ -7057,10 +7204,16 @@ function compactAndRefill() {
   const cellH = H / ROWS;
   const cx = W / 2;
   const bowlR = Math.min(W, H) / 2 - 2;
-  // Cap: only refill enough empty cells to bring the fruit count up to FRUIT_CAP.
-  // Powerups don't count toward the cap; popping balls don't either.
-  const currentFruits = state.balls.filter(b => !b.popping && !b.isPowerup).length;
-  let canAdd = Math.max(0, FRUIT_CAP - currentFruits);
+  // Cap: refill against an AREA budget (FRUIT_CAP, in size-1-fruit areas) rather than a flat
+  // count, so a few big merged fruits eat the budget and the bowl never overpacks. Each fruit's
+  // footprint ~ effectiveScale^2; powerups and popping balls don't count.
+  let occupancy = 0;
+  for (const b of state.balls) {
+    if (b.popping || b.isPowerup) continue;
+    const s = effectiveScale(b);
+    occupancy += s * s;
+  }
+  let canAdd = Math.max(0, Math.floor(FRUIT_CAP - occupancy));
 
   for (let c = 0; c < COLS; c++) {
     for (let r = 0; r < ROWS; r++) {
@@ -7076,6 +7229,7 @@ function compactAndRefill() {
       }
     }
   }
+  jostle(); // new spawns + compaction: let the pile fall freely before re-settling
 }
 
 /* ---------------------- POP + GRAVITY (single choke point) ---------------------- */
@@ -7092,15 +7246,19 @@ function popCells(balls, done) {
     if (sz >= 10) Stats.bump("giantPops");
     else if (sz >= 5) Stats.bump("bigPops");
     Stats.max("biggestSize", Math.round(sz));
+    // HYPE meter: every pop builds momentum; bigger fruit builds it faster.
+    state.hype = Math.min(1, (state.hype || 0) + hypeGain(sz));
     // Juice: splat particles in the fruit's color. Bigger fruit = more particles.
     const partCount = Math.min(28, 8 + Math.round(sz));
     spawnPopParticles(b.x, b.y, b.color || "#ffc973", partCount);
     popCount++;
   }
+  if (popCount > 0) state.hypeLastPop = performance.now();
   // Charge any unlocked support fruits (3% per pop) — slow filling on top of own-type charge
   if (popCount > 0) chargeNewFruitsFromAnyPop(popCount * 3);
 
   for (const b of balls) b.popping = true;
+  jostle(); // wake the surrounding pile so it drops fast to fill the gap
 
   setTimeout(() => {
     // null cells in grid
@@ -7134,6 +7292,133 @@ function recordCollected(balls) {
   }
 }
 
+/* ---------------------- FRENZY ---------------------- */
+function frenzyActive() {
+  return !!state.frenzyUntil && performance.now() < state.frenzyUntil;
+}
+// FRENZY = a 5-second disco window with a ramping ×2→×5 score multiplier. Triggered once per level at
+// the HALFWAY mark (on a boss, that's "boss at half health"). No auto-popping — it's purely a reward
+// window; the player keeps playing and racks up boosted score. Fired from checkMidLevelFrenzy().
+function triggerFrenzy() {
+  if (frenzyActive()) return;
+  state.frenzyUntil = performance.now() + FRENZY_DURATION;
+  state.frenzyMult = FRENZY_MULT_MIN;
+  document.body.classList.add("frenzy");
+  const hud = document.getElementById("comboHud");
+  if (hud) hud.dataset.mode = "frenzy";
+  showBanner("🌈 FRENZY!!! 🌈");
+  Sound.play("rainbow");
+  shakeScreen(5, 500);
+}
+// Fire the frenzy once when the level is half-cleared (boss half-HP). Called from addScore.
+function checkMidLevelFrenzy() {
+  if (state._frenzyFired || state.endless) return;
+  const lv = LEVELS[state.level % LEVELS.length];
+  if (!lv || !lv.targetScore) return;
+  if (state.score >= lv.targetScore * 0.5) {
+    state._frenzyFired = true;
+    triggerFrenzy();
+  }
+}
+// Run/expire the frenzy window + refresh its multiplier badge each frame.
+function tickFrenzy() {
+  if (!state.frenzyUntil) return;
+  if (performance.now() >= state.frenzyUntil) {
+    state.frenzyUntil = 0;
+    state.frenzyMult = 1;
+    document.body.classList.remove("frenzy");
+    const hud = document.getElementById("comboHud");
+    if (hud) hud.dataset.mode = "";
+    updateHypeHUD();
+    return;
+  }
+  const hud = document.getElementById("comboHud");
+  if (hud) {
+    const left = Math.ceil((state.frenzyUntil - performance.now()) / 1000);
+    hud.innerHTML = `<div class="comboBadge tier3 frenzyBadge">🌈 FRENZY ×${(state.frenzyMult || 2).toFixed(1)} · ${left}s</div>`;
+  }
+}
+
+/* ---------------------- HYPE METER ---------------------- */
+// Decay the meter when the player stops popping (after a short grace), and keep its HUD fresh.
+function tickHype(dt) {
+  const now = performance.now();
+  if ((state.hype || 0) > 0 && now - (state.hypeLastPop || 0) > HYPE_GRACE) {
+    state.hype = Math.max(0, state.hype - HYPE_DECAY * dt);
+  }
+  updateHypeHUD();
+}
+// Always-visible multiplier bar. The frenzy badge takes over the same slot while a frenzy is running.
+function updateHypeHUD() {
+  const hud = document.getElementById("comboHud");
+  if (!hud || frenzyActive()) return; // frenzy owns the HUD slot while active
+  const h = state.hype || 0;
+  if (h < 0.02) {
+    if (hud.dataset.mode === "hype") { hud.innerHTML = ""; hud.dataset.mode = ""; }
+    return;
+  }
+  const mult = hypeMult();
+  if (hud.dataset.mode !== "hype") {
+    hud.innerHTML = `<div class="comboBadge hypeBadge"><span class="hypeMult"></span><span class="hypeBar"><span class="hypeFill"></span></span></div>`;
+    hud.dataset.mode = "hype";
+  }
+  const badge = hud.querySelector(".comboBadge");
+  if (badge) badge.className = "comboBadge hypeBadge " + (mult >= 3.5 ? "tier3" : mult >= 2.2 ? "tier2" : "");
+  const m = hud.querySelector(".hypeMult"); if (m) m.textContent = "×" + mult.toFixed(1);
+  const f = hud.querySelector(".hypeFill"); if (f) f.style.width = Math.round(h * 100) + "%";
+}
+
+/* ---------------------- WIN / LOSE ---------------------- */
+// Can the board still produce score WITHOUT a new chain? (a merged fruit to pop, a powerup star, or
+// a charged power). Used to decide a FAIR "out of moves" loss — only fail when truly stuck, so the
+// player always gets to cash in their last merge before the level is lost.
+function canStillScore() {
+  for (const b of state.balls) {
+    if (b.popping || b._merging) continue;
+    if (b.isPowerup) return true;
+    if ((b.size || 1) > 1 || b.isExplosive || b.dropsPowerup) return true;
+  }
+  for (const t in state.powers) if ((state.powers[t] || 0) >= 100) return true;
+  return false;
+}
+
+// A level can now be LOST (out of moves with nothing left to pop, or out of time). Mirrors
+// levelComplete's overlay, costs a life, and re-labels the primary button to "Retry".
+function levelFailed(reason) {
+  if (state._completed || state._failed) return;
+  state._failed = true;
+  state.levelInProgress = false;
+  state.busy = true;
+  Sound.play("bomb");
+  if (typeof consumeLife === "function") consumeLife(); // a failed attempt costs a life
+  const lv = LEVELS[state.level % LEVELS.length];
+  const overlay = document.getElementById("overlay");
+  const card = overlay ? overlay.querySelector(".overlayCard") : null;
+  if (card) card.classList.add("failed");
+  document.getElementById("overlayEmoji").textContent = "😵";
+  document.getElementById("overlayTitle").textContent = "Level Failed";
+  document.getElementById("overlaySub").textContent = `${reason}  ·  ${state.score} / ${lv.targetScore}`;
+  document.getElementById("overlayStars").innerHTML = "";
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.style.display = "";
+  nextBtn.textContent = "Retry";
+  overlay.classList.add("active");
+}
+
+// Countdown for timed levels. Only runs while the player is actively at the board — paused during
+// animations and overlays (state.busy) so you're never penalised for animation time. Fails at zero.
+function tickLevelTimer(dt) {
+  if (state.endless || !state.timeLimit) return;
+  if (state.busy || !state.levelInProgress || state._completed || state._failed || state.gameOver) return;
+  state.timeLeft = Math.max(0, (state.timeLeft || 0) - dt);
+  const sec = Math.ceil(state.timeLeft);
+  if (sec !== state._lastTimerSec) {  // refresh the HUD ~once per second, not every frame
+    state._lastTimerSec = sec;
+    updateMovesLine();
+  }
+  if (state.timeLeft <= 0) levelFailed("Time's up!");
+}
+
 /* ---------------------- AFTER MOVE ---------------------- */
 function afterMove() {
   if (state.endless) {
@@ -7144,6 +7429,11 @@ function afterMove() {
   // Universal score-target check
   if (state.score >= lv.targetScore) {
     levelComplete();
+    return;
+  }
+  // Out of moves AND nothing left that can score → the level is lost.
+  if (state.moveLimit && state.moveCount >= state.moveLimit && !canStillScore()) {
+    levelFailed("Out of moves!");
     return;
   }
   if (lv.boss) {
@@ -7367,7 +7657,7 @@ function runBossAttack(lv) {
     else attackShuffle();
     // Screen shake to sell the boss landing the hit
     shakeScreen(2.5, 380);
-    // small nudge
+    // small nudge to sell the boss landing the hit
     for (const b of state.balls) {
       b.vx += (Math.random() - 0.5) * 400;
       b.vy -= Math.random() * 200;
@@ -7439,11 +7729,11 @@ function levelComplete() {
   const nextLevel = Math.min(LEVELS.length - 1, state.level + 1);
   if (nextLevel > data.unlocked) data.unlocked = nextLevel;
   // Coin reward: (base + per-star + boss) × deeper-level scaling × Coin Rate × pet × event × prestige.
-  // Tightened: base 80 (was 120), per-star 40 (was 60), boss 200 (was 300); scaling +6% per level (was 10%).
-  // L1 3★ ≈ 200🪙, L30 3★ ≈ 560🪙, L50 boss 3★ ≈ 1480🪙 (before upgrades/prestige).
+  // Economy tighten (~35% lower): base 80→50, per-star 40→25, boss 200→125; scaling +6%/level kept.
+  // L1 3★ ≈ 130🪙, L30 3★ ≈ 365🪙, L50 boss 3★ ≈ 960🪙 (before upgrades/prestige).
   const levelScale = 1 + 0.06 * state.level;
   const coinMult = upgVal("coinRate") * petBonus("coin") * (state.eventMode === "coin" ? 2 : 1) * prestigeBonus();
-  let coinsEarned = Math.round((80 + 40 * stars + (lv.boss ? 200 : 0)) * levelScale * coinMult);
+  let coinsEarned = Math.round((50 + 25 * stars + (lv.boss ? 125 : 0)) * levelScale * coinMult);
   // First event clear of the day → 200🪙 bonus chest
   let eventBonus = 0;
   if (state.eventMode && data.lastEventDate !== _todayStr()) {
@@ -7476,6 +7766,9 @@ function levelComplete() {
   Stats.bump("coinsEarned", coinsEarned);
 
   const overlay = document.getElementById("overlay");
+  const winCard = overlay.querySelector(".overlayCard");
+  if (winCard) winCard.classList.remove("failed"); // clear any leftover fail styling
+  document.getElementById("nextBtn").textContent = "Next Level →";
   const emoji = document.getElementById("overlayEmoji");
   const title = document.getElementById("overlayTitle");
   const sub = document.getElementById("overlaySub");
@@ -7709,13 +8002,27 @@ function showTutorial() {
 }
 
 document.getElementById("nextBtn").addEventListener("click", () => {
-  document.getElementById("overlay").classList.remove("active");
+  const overlay = document.getElementById("overlay");
+  overlay.classList.remove("active");
+  const card = overlay.querySelector(".overlayCard");
+  if (card) card.classList.remove("failed");
+  const nextBtn = document.getElementById("nextBtn");
+  // Retry path — the button was relabelled "Retry" on a failed level. A retry needs a life
+  // (the failed attempt already spent one); at zero lives, route to the lives modal instead.
+  if (state._failed) {
+    state._failed = false;
+    nextBtn.textContent = "Next Level →";
+    const data = tickLives();
+    if (data.lives <= 0) { showLivesModal(); showLevelSelect(); return; }
+    startLevel(state.level, true);
+    return;
+  }
   state._completed = false;
   if (state.endless) {
     // Endless overlay's primary button returns home
     state.endless = false;
     state._endlessOver = false;
-    document.getElementById("nextBtn").textContent = "Next Level →";
+    nextBtn.textContent = "Next Level →";
     showHomeScreen();
     return;
   }
@@ -7739,7 +8046,11 @@ document.getElementById("restartBtn").addEventListener("click", () => {
 document.getElementById("levelTag").addEventListener("click", openLevelSelect);
 
 document.getElementById("backToLevelsBtn").addEventListener("click", () => {
-  // From the level-complete overlay → show level select
+  // From the level-complete/-failed overlay → show level select. Clear any fail styling first.
+  state._failed = false;
+  const card = document.getElementById("overlay").querySelector(".overlayCard");
+  if (card) card.classList.remove("failed");
+  document.getElementById("nextBtn").textContent = "Next Level →";
   showLevelSelect();
 });
 
@@ -7808,16 +8119,9 @@ document.getElementById("seasonBackBtn").addEventListener("click", hideSeason);
 document.getElementById("prestigeHomeBtn").addEventListener("click", () => _goFromHomeTo(showPrestige));
 document.getElementById("prestigeBackBtn").addEventListener("click", hidePrestige);
 document.getElementById("prestigeBtn").addEventListener("click", doPrestige);
-document.getElementById("tournamentHomeBtn").addEventListener("click", () => _goFromHomeTo(showTournament));
-document.getElementById("tournamentBackBtn").addEventListener("click", hideTournament);
 document.getElementById("codexHomeBtn").addEventListener("click", () => _goFromHomeTo(showCodex));
 document.getElementById("codexBackBtn").addEventListener("click", hideCodex);
 document.getElementById("streakBackBtn").addEventListener("click", hideStreak);
-document.getElementById("eventHomeBtn").addEventListener("click", () => {
-  document.getElementById("homeOverlay").classList.remove("active");
-  state.busy = false;
-  startEventLevel();
-});
 document.getElementById("settingsSoundToggle").addEventListener("click", toggleSoundFromSettings);
 document.getElementById("settingsSkipGachaToggle").addEventListener("click", () => {
   const d = Save.load();
@@ -8136,6 +8440,9 @@ function renderHomeDailyCard() {
 }
 
 /* ---------------------- ACHIEVEMENTS ---------------------- */
+// Derived from the live level table so these stay correct as levels/worlds are added
+// (the game grew to 50 levels / 10 bosses but these thresholds were hard-coded to 30 / 6).
+const BOSS_COUNT = LEVELS.filter(l => l.boss).length;
 const ACHIEVEMENTS = [
   // Tiered — grindy stats with multiple thresholds
   { id: "pop1",   name: "Pop Pioneer",   desc: "Pop 100 bubbles",            stat: "pops",          threshold: 100,   reward: 50,   emoji: "💥" },
@@ -8154,11 +8461,11 @@ const ACHIEVEMENTS = [
   { id: "first_clear",    name: "First Steps",   desc: "Clear your first level",      stat: "levelsCleared",   threshold: 1,  reward: 100,  emoji: "🚀" },
   { id: "triple",         name: "Triple Threat", desc: "Get 3 stars on any level",    stat: "threeStarClears", threshold: 1,  reward: 100,  emoji: "⭐" },
   { id: "boss_kill1",     name: "Boss Slayer",   desc: "Defeat your first boss",      stat: "bossesDefeated",  threshold: 1,  reward: 150,  emoji: "👹" },
-  { id: "boss_kill_all",  name: "Conqueror",     desc: "Defeat all 6 bosses",         stat: "bossesDefeated",  threshold: 6,  reward: 500,  emoji: "👑" },
+  { id: "boss_kill_all",  name: "Conqueror",     desc: `Defeat all ${BOSS_COUNT} bosses`, stat: "bossesDefeated",  threshold: BOSS_COUNT, reward: 500,  emoji: "👑" },
   { id: "mega_pop",       name: "MEGA POP",      desc: "Pop a size-15 bubble",        stat: "biggestSize",     threshold: 15, reward: 200,  emoji: "💣" },
   { id: "legendary",      name: "LEGENDARY!",    desc: "Pull a Legendary fruit",      stat: "legendaryPulls",  threshold: 1,  reward: 250,  emoji: "🌟" },
   { id: "combo7",         name: "Combo Crusher", desc: "Chain 7+ bubbles in one move",stat: "biggestChain",    threshold: 7,  reward: 150,  emoji: "🔥" },
-  { id: "all_3star",      name: "PERFECTIONIST", desc: "3-star all 30 levels",        stat: "threeStarClears", threshold: 30, reward: 1500, emoji: "💎" }
+  { id: "all_3star",      name: "PERFECTIONIST", desc: `3-star all ${LEVELS.length} levels`, stat: "threeStarClears", threshold: LEVELS.length, reward: 1500, emoji: "💎" }
 ];
 
 function achievementState(id) {
@@ -8619,17 +8926,19 @@ function boosterSkipLevel() {
 /* ---------------------- UPGRADES (coin-spendable) ---------------------- */
 // Costs go T(n-1) → T(n). 10 tiers per track. Smooth doubling curve so each
 // purchase feels like real progress without making the late game impossible.
+// Smoothed to a consistent ~2.15× curve (the old curve decelerated late: ×2.6 early → ×1.9 late).
+// Early tiers raised a touch, late tiers steeper — so no upgrade track is trivially front-loaded.
 const UPGRADE_COSTS = [
-  150,    // T0 → T1
-  400,    // → T2
-  900,    // → T3
+  200,    // T0 → T1
+  450,    // → T2
+  950,    // → T3
   2000,   // → T4
-  4500,   // → T5
-  9500,   // → T6
-  19000,  // → T7
-  38000,  // → T8
-  72000,  // → T9
-  140000  // → T10
+  4300,   // → T5
+  9200,   // → T6
+  20000,  // → T7
+  43000,  // → T8
+  92000,  // → T9
+  200000  // → T10
 ];
 const MAX_UPGRADE_TIER = 10;
 const UPGRADE_TRACKS = [
@@ -8637,7 +8946,7 @@ const UPGRADE_TRACKS = [
     tiers: [1.0, 1.15, 1.30, 1.50, 1.75, 2.0, 2.3, 2.7, 3.2, 4.0, 5.0],
     fmt: m => `Level rewards ×${m}` },
   { id: "afkRate",          name: "AFK Rate",        emoji: "💤",
-    tiers: [1, 2, 3, 5, 7, 10, 15, 22, 32, 48, 70],
+    tiers: [1, 2, 3, 4, 5, 7, 9, 12, 16, 22, 30],  // retuned down (was max 70) so idle income doesn't dwarf active play
     fmt: r => `${r} coins/min while away` },
   { id: "pullDiscount",     name: "Pull Discount",   emoji: "🎰",
     tiers: [0, 10, 20, 30, 40, 55, 70, 80, 90, 95, 95],
@@ -8743,12 +9052,13 @@ function hideUpgrades() {
 }
 
 /* ---------------------- AFK EARNINGS ---------------------- */
-const AFK_RATE_TABLE = [1, 2, 3, 5, 8, 12]; // index 0 = base, 1..5 = upgrade tiers
 const AFK_CAP_MINS = 4 * 60;                 // 4 hours of accumulation max
 
+// Coins/min while away — driven directly by the afkRate UPGRADE TRACK (single source of truth).
+// (Previously a stale 6-entry table here capped out at tier 5 and silently dropped tiers 6-10 to
+// 1/min, so buying past T5 made AFK income WORSE than advertised.)
 function afkRatePerMin() {
-  const t = ((Save.load().upgrades || {}).afkRate) || 0;
-  return AFK_RATE_TABLE[t] || 1;
+  return upgVal("afkRate");
 }
 
 function computeAfkEarnings() {
@@ -9272,7 +9582,12 @@ const Music = (() => {
   }
   function stop() {
     if (timer) { clearInterval(timer); timer = null; }
-    if (master) try { master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4); } catch(e) {}
+    const dying = ctx;
+    if (master && ctx) try { master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4); } catch(e) {}
+    // Close the old context after the fade so repeated mute/unmute doesn't leak AudioContexts
+    // (browsers cap concurrent contexts ~6; the previous code re-created one each unmute and never closed it).
+    if (dying) setTimeout(() => { try { dying.close(); } catch(e) {} }, 500);
+    ctx = null; master = null;
     started = false;
   }
   function schedule() {
@@ -9319,6 +9634,9 @@ function frame(now) {
   lastT = now;
 
   physicsTick(dt);
+  tickFrenzy();       // run/expire the disco frenzy window + its multiplier badge
+  tickHype(dt);       // decay the Hype meter + refresh its HUD
+  tickLevelTimer(dt); // timed-level countdown (boss levels)
   if (_particles.length) tickParticles(dt);
   updateScoreDisplay(now);
   drawBalls();
