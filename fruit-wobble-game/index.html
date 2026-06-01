@@ -541,7 +541,7 @@
   #app {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
-    align-items: center;
+    align-items: center; justify-content: center; /* center the (scale-to-fit) column vertically */
     /* Safe-area aware: 0 on desktop (env resolves to 0), expands past the notch/home-indicator
        on mobile so the HUD/boosters never sit under device chrome. */
     padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
@@ -1643,8 +1643,9 @@
     /* Size the (square) jar by BOTH width and the height left after the header, panels, boosters,
        gaps and padding (~260px) — so the whole fixed-height gameplay column always fits the
        viewport and nothing clips. dvh override keeps it correct under mobile browser chrome. */
-    width: min(92vw, calc(100vh - 350px), 540px);
-    width: min(92vw, calc(100dvh - 350px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 540px);
+    /* Stable natural size — fitGameScreen() uniformly scales the whole column to fit the viewport
+       (handles browser zoom + short windows), so the jar no longer needs a guessed height reserve. */
+    width: min(92vw, 540px);
     aspect-ratio: 1 / 1;
     position: relative;
     background:
@@ -2905,6 +2906,8 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
   }
+  /* Home card is scaled to fit instead (fitHomeCard) — natural height, no scrollbar. */
+  #homeOverlay .homeCard { max-height: none; overflow: visible; }
 
   /* Short viewports (landscape phones, small laptops): the jar already shrinks to fit via its
      height-aware width above — here we just tighten the surrounding spacing to claw back room. */
@@ -5034,6 +5037,7 @@ function startLevel(i, fromPlayer = false) {
   }
   renderPowerRow();
   applyPetBadge();
+  fitGameScreen(); // HUD for this level is now laid out → scale to fit + size the canvas before placing balls
   initBoard();
   if (fromPlayer) {
     // New-world arrival banner (every 5th level starts a new world theme).
@@ -10812,6 +10816,8 @@ function showHomeScreen() {
   renderHomeAfkCard();
   renderHomeGoalsCard();
   renderHomeDailyCard();
+  // Scale the home card to fit (no scrolling) once its cards have laid out.
+  requestAnimationFrame(fitHomeCard);
   // Defer the daily check so the home screen has a frame to render first
   setTimeout(checkAndMaybeShowDaily, 250);
 }
@@ -10850,6 +10856,7 @@ function boot() {
   // Background level renders behind the home screen for a sneak peek of gameplay
   startLevel(Math.min(data.unlocked, LEVELS.length - 1));
   requestAnimationFrame(frame);
+  requestAnimationFrame(fitGameScreen); // scale gameplay column to fit once laid out
   // App-open intro animation — plays once per "real visit", NOT on rapid refreshes.
   // We treat 30+ min since the last load as a new visit (the standard session-idle gap), tracked
   // in localStorage so it survives a tab close. Every load stamps the time, so continuous
@@ -10876,25 +10883,49 @@ function boot() {
   }
 }
 
-window.addEventListener("resize", () => {
-  resizeCanvas();
-  const cx = W / 2;
-  const cy = H / 2;
+function reflowBalls() {
+  const cx = W / 2, cy = H / 2;
   const bowlR = Math.min(W, H) / 2 - 2;
   for (const b of state.balls) {
     const rr = R * effectiveScale(b);
-    const dx = b.x - cx;
-    const dy = b.y - cy;
+    const dx = b.x - cx, dy = b.y - cy;
     const dist = Math.hypot(dx, dy);
     const maxDist = bowlR - rr;
     if (dist > maxDist) {
-      const nx = dx / (dist || 1);
-      const ny = dy / (dist || 1);
-      b.x = cx + nx * maxDist;
-      b.y = cy + ny * maxDist;
+      const nx = dx / (dist || 1), ny = dy / (dist || 1);
+      b.x = cx + nx * maxDist; b.y = cy + ny * maxDist;
     }
   }
-});
+}
+// AUTO-FIT: measure the gameplay column's natural layout size, then uniformly scale it so the WHOLE
+// thing always fits the viewport — at any browser zoom or window size, nothing is ever cut off.
+// (Canvas stays crisp: resizeCanvas + pointerPos both read getBoundingClientRect, which is post-scale.)
+function fitGameScreen() {
+  const col = document.getElementById("playColumn");
+  if (!col) return;
+  col.style.transform = "none"; // measure natural (untransformed) layout size
+  const natW = col.offsetWidth, natH = col.offsetHeight;
+  if (!natW || !natH) return;
+  const s = Math.min(1, (window.innerWidth - 6) / natW, (window.innerHeight - 6) / natH);
+  col.style.transformOrigin = "center center";
+  col.style.transform = s < 0.999 ? `scale(${s})` : "none";
+  resizeCanvas();
+  reflowBalls();
+}
+// Same idea for the home menu card so all its buttons/cards fit without scrolling.
+function fitHomeCard() {
+  const card = document.querySelector("#homeOverlay .homeCard");
+  if (!card) return;
+  card.style.transform = "none";
+  const natW = card.offsetWidth, natH = card.offsetHeight;
+  if (!natW || !natH) return;
+  const s = Math.min(1, (window.innerWidth - 12) / natW, (window.innerHeight - 12) / natH);
+  card.style.transformOrigin = "center center";
+  card.style.transform = s < 0.999 ? `scale(${s})` : "none";
+}
+function onViewportChange() { fitGameScreen(); fitHomeCard(); }
+window.addEventListener("resize", onViewportChange);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 
 // resume audio on first interaction (browser policy)
 window.addEventListener("pointerdown", () => Sound.unlock(), { once: true });
