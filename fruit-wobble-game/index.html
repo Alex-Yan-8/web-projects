@@ -2868,6 +2868,14 @@
       linear-gradient(180deg, #a8dffb 0%, #c6e8fb 30%, #ffe9c2 60%, #ffd9a0 100%);
   }
   #fruitSkillsOverlay.active { display: flex; }
+  #skillTreeOverlay {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center; z-index: 60;
+    background:
+      radial-gradient(circle 130px at 22% 14%, #d8c5ff 0 38%, rgba(180,150,240,0.5) 60%, transparent 85%),
+      linear-gradient(180deg, #b79bff 0%, #c6b0fb 30%, #e7d8ff 60%, #ffe9c2 100%);
+  }
+  #skillTreeOverlay.active { display: flex; }
   .fsRow { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg,#fff,#eef4ff);
     border: 2px solid #fff; border-radius: 14px; padding: 10px 12px; margin: 8px 0;
     box-shadow: 0 3px 0 rgba(120,140,180,0.3); text-align: left; }
@@ -3596,6 +3604,7 @@
     <div class="hubSubBar">
       <button class="loadoutOpenBtn" id="loadoutOpenBtn" type="button">🧺 Edit Loadout</button>
       <button class="loadoutOpenBtn" id="fruitSkillsBtn" type="button">🍌 Fruit Skills</button>
+      <button class="loadoutOpenBtn" id="skillTreeBtn" type="button">⭐ Skill Tree</button>
       <button class="loadoutOpenBtn" id="skipWorldBtn" type="button">⏩ Skip World · 8💎</button>
     </div>
     <div class="levelMap" id="levelMap"></div>
@@ -3782,6 +3791,18 @@
     </div>
     <div class="loadoutHint">Powers start weak and grow to their <b>prime</b>. Spend 💎 (earned from prestige) to master each fruit.</div>
     <div id="fruitSkillsList"></div>
+  </div>
+</div>
+
+<div id="skillTreeOverlay">
+  <div class="overlayCard cosmeticsCard">
+    <div class="hubTopBar">
+      <button class="hubBackBtn" id="skillTreeBackBtn" type="button" aria-label="Back">←</button>
+      <h2 class="profileTitle">⭐ Skill Tree</h2>
+      <div class="gemPill"><span class="gemIcon">⭐</span><span class="skStarCount">0</span></div>
+    </div>
+    <div class="loadoutHint">Spend the ⭐ stars you earn from levels on permanent <b>global</b> perks. (This does <b>not</b> reduce your prestige multiplier.)</div>
+    <div id="skillTreeList"></div>
   </div>
 </div>
 
@@ -4424,6 +4445,8 @@ const Save = (() => {
       pieces: { apple: 0, banana: 0, grape: 0, orange: 0 },
       tiers:  { apple: 1, banana: 1, grape: 1, orange: 1 },
       fruitMastery: {},   // per-fruit power MASTERY level (0..MASTERY_MAX); raised with 💎 in Fruit Skills
+      skills: {},         // star skill-tree node levels (id → level)
+      spentStars: 0,      // stars spent in the skill tree (available = totalStars − spentStars)
       pullCount: 0,
       lastPull: null,
       pityCounter: 0,
@@ -4500,6 +4523,10 @@ const Save = (() => {
         const v = obj.fruitMastery[t];
         obj.fruitMastery[t] = (typeof v === "number" && v > 0) ? Math.min(6, Math.floor(v)) : 0;
       }
+      // Star skill tree: node levels + the spent-star counter.
+      if (!obj.skills || typeof obj.skills !== "object") obj.skills = {};
+      for (const k in obj.skills) { const v = obj.skills[k]; obj.skills[k] = (typeof v === "number" && v > 0) ? Math.floor(v) : 0; }
+      if (typeof obj.spentStars !== "number" || obj.spentStars < 0) obj.spentStars = 0;
       // Player's fruit loadout — which base fruits appear in puzzle play. Min 2.
       if (!Array.isArray(obj.loadoutAllowedTypes) || obj.loadoutAllowedTypes.length < 2) {
         obj.loadoutAllowedTypes = ["apple","banana","grape","orange"];
@@ -4956,6 +4983,9 @@ function startLevel(i, fromPlayer = false) {
   state.scoreAnimStart = performance.now();
   document.getElementById("score").textContent = "0";
   state.powers = { apple: 0, banana: 0, grape: 0, orange: 0, strawberry: 0, cherry: 0, kiwi: 0, mango: 0, coconut: 0, blueberry: 0 };
+  // Warm Start skill: powers begin each level partially charged (+8% per level).
+  const _warm = Math.min(100, skillLevel("warmStart") * 8);
+  if (_warm > 0) for (const t in state.powers) state.powers[t] = _warm;
   state.combo = 0;
   state.lastChainAt = 0;
   renderComboHUD();
@@ -5205,7 +5235,7 @@ function chargePower(type, amount) {
   const before = state.powers[type];
   // Power Charge upgrade scales all charge gains (e.g. ×1.5 at T4); pets + event stack on top
   const evMult = state.eventMode === "power" ? 2 : 1;
-  const chargeMult = upgVal("powerCharge") * petBonus("power") * evMult;
+  const chargeMult = upgVal("powerCharge") * petBonus("power") * evMult * skillMult("charge", 0.06);
   state.powers[type] = Math.min(100, before + amount * chargeMult);
   updatePowerUI();
   // Audio dings escalating through 25 → 50 → 75 → 100. Rising pitch = "you're getting close".
@@ -5423,6 +5453,75 @@ function showFruitSkills() {
 }
 function hideFruitSkills() {
   document.getElementById("fruitSkillsOverlay").classList.remove("active");
+  showLevelSelect();
+}
+
+/* ---------------------- STAR SKILL TREE ----------------------
+ * Spend ⭐ stars (earned by clearing levels) on permanent GLOBAL perks. Stars here are tracked via
+ * data.spentStars; available = totalStars() − spentStars. This is SEPARATE from prestige banking
+ * (which uses totalStars high-water mark), so spending here never reduces your prestige multiplier. */
+const SKILL_NODES = [
+  { id: "warmStart", icon: "🔋", name: "Warm Start",  max: 5, per: "Powers begin each level +8% charged", costs: [2, 3, 5, 7, 10] },
+  { id: "charge",    icon: "⚡", name: "Overcharge",   max: 5, per: "+6% power charge speed",              costs: [2, 3, 5, 7, 10] },
+  { id: "hype",      icon: "🔥", name: "Hype Master",  max: 5, per: "+10% Hype build speed",               costs: [3, 5, 8, 12, 17] },
+  { id: "scholar",   icon: "📈", name: "Scholar",      max: 5, per: "+4% score from every pop",            costs: [3, 5, 8, 12, 17] },
+  { id: "fortune",   icon: "🪙", name: "Fortune",      max: 5, per: "+6% coins from levels",               costs: [2, 4, 6, 9, 13] },
+  { id: "thrift",    icon: "💸", name: "Thrift",       max: 5, per: "-6% booster cost",                    costs: [2, 3, 5, 7, 10] },
+  { id: "vitality",  icon: "❤️", name: "Vitality",     max: 3, per: "+1 max life",                         costs: [4, 7, 12] },
+];
+const SKILL_BY_ID = Object.fromEntries(SKILL_NODES.map(n => [n.id, n]));
+function skillLevel(id) { return (Save.load().skills || {})[id] || 0; }
+function skillMult(id, perLevel) { return 1 + skillLevel(id) * perLevel; } // 1 + level×perLevel
+function skillCost(node) { const l = skillLevel(node.id); return l >= node.max ? null : node.costs[l]; }
+function availableStars() { return Math.max(0, totalStars() - (Save.load().spentStars || 0)); }
+
+function renderSkillTree() {
+  const list = document.getElementById("skillTreeList");
+  if (!list) return;
+  const avail = availableStars();
+  document.querySelectorAll("#skillTreeOverlay .skStarCount").forEach(el => el.textContent = avail);
+  list.innerHTML = "";
+  for (const node of SKILL_NODES) {
+    const lvl = skillLevel(node.id);
+    const cost = skillCost(node);
+    const maxed = cost == null;
+    const afford = !maxed && avail >= cost;
+    const row = document.createElement("div");
+    row.className = "fsRow";
+    row.innerHTML =
+      `<span class="fsEmoji">${node.icon}</span>` +
+      `<div class="fsBody">` +
+        `<div class="fsName">${node.name}<span class="fsLvl">Lv ${lvl}/${node.max}</span></div>` +
+        `<div class="fsEffect">${node.per}${lvl > 0 ? ` &nbsp;·&nbsp; now: <b>${node.id === "vitality" ? "+" + lvl + " lives" : node.id === "thrift" ? "-" + lvl * 6 + "%" : "+" + (lvl * (node.id === "hype" ? 10 : node.id === "warmStart" ? 8 : node.id === "fortune" || node.id === "charge" ? 6 : 4)) + "%"}</b>` : ""}</div>` +
+        `<div class="fsBar"><i style="width:${Math.round(lvl / node.max * 100)}%"></i></div>` +
+      `</div>` +
+      (maxed ? `<button class="fsUpBtn maxed" disabled>MAX</button>`
+             : `<button class="fsUpBtn" data-sk="${node.id}" ${afford ? "" : "disabled"}>${cost}⭐</button>`);
+    list.appendChild(row);
+  }
+  list.querySelectorAll(".fsUpBtn[data-sk]").forEach(btn =>
+    btn.addEventListener("click", () => buySkill(btn.dataset.sk)));
+}
+function buySkill(id) {
+  const node = SKILL_BY_ID[id]; if (!node) return;
+  const cost = skillCost(node); if (cost == null) return;
+  if (availableStars() < cost) { showBanner("NOT ENOUGH ⭐"); return; }
+  const data = Save.load();
+  data.spentStars = (data.spentStars || 0) + cost;
+  if (!data.skills) data.skills = {};
+  data.skills[id] = Math.min(node.max, (data.skills[id] || 0) + 1);
+  Save.save(data);
+  Sound.play("rainbow");
+  showBanner(`${node.icon} ${node.name} → Lv ${data.skills[id]}`);
+  renderSkillTree();
+}
+function showSkillTree() {
+  state.busy = true;
+  document.getElementById("skillTreeOverlay").classList.add("active");
+  renderSkillTree();
+}
+function hideSkillTree() {
+  document.getElementById("skillTreeOverlay").classList.remove("active");
   showLevelSelect();
 }
 
@@ -5848,7 +5947,7 @@ function flyBlast(fromRect, toRect, onArrive) {
 const HYPE_MAX   = 5;    // max score multiplier at a full meter
 const HYPE_GRACE = 600;  // ms after a pop before the meter starts to drain
 const HYPE_DECAY = 0.32; // meter (0..1) lost per second when idle (~3s from full → empty)
-function hypeGain(size) { return Math.min(0.18, 0.03 + size * 0.007); } // per-pop gain, scaled by fruit size
+function hypeGain(size) { return Math.min(0.18, 0.03 + size * 0.007) * skillMult("hype", 0.10); } // per-pop gain (×Hype Master skill)
 function hypeMult() { return 1 + (state.hype || 0) * ((state.hypeMax || HYPE_MAX) - 1); } // cap can be raised by prestige
 // Legacy rapid-merge combo — kept only for the biggestCombo stat + animal cheers; no longer scores.
 function comboMult() { return 1.0; }
@@ -5862,7 +5961,7 @@ function addScore(amount) {
   // HYPE meter is the main multiplier now (built by pops); frenzy stacks on top. Base scoring is
   // lowered and scaled up by prestige (state.scoreScale, cached at level start — see startLevel).
   const sScale = state.scoreScale != null ? state.scoreScale : BASE_SCORE_FACTOR;
-  amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * sScale * endlessMult * frenzy);
+  amount = Math.round(amount * hypeMult() * petBonus("score") * evMult * sScale * endlessMult * frenzy * skillMult("scholar", 0.04));
   if (frenzy > 1) state.frenzyMult = Math.min(state.frenzyMax || FRENZY_MULT_MAX, (state.frenzyMult || FRENZY_MULT_MIN) + FRENZY_MULT_STEP);
   state.scoreAnimFrom = state.displayedScore;
   state.score += amount;
@@ -8562,7 +8661,7 @@ function levelComplete() {
   // L1 3★ ≈ 130🪙, L30 3★ ≈ 365🪙, L50 boss 3★ ≈ 960🪙 (before upgrades/prestige).
   const levelScale = 1 + 0.06 * state.level;
   const coinMult = upgVal("coinRate") * petBonus("coin") * (state.eventMode === "coin" ? 2 : 1) * prestigeBonus();
-  let coinsEarned = Math.round((50 + 25 * stars + (lv.boss ? 125 : 0)) * levelScale * coinMult);
+  let coinsEarned = Math.round((50 + 25 * stars + (lv.boss ? 125 : 0)) * levelScale * coinMult * skillMult("fortune", 0.06));
   // Re-clearing an already-beaten level pays only 30% — closes a zero-cost coin farm.
   if (replay) coinsEarned = Math.round(coinsEarned * 0.3);
   // First event clear of the day → 200🪙 bonus chest
@@ -8923,6 +9022,12 @@ document.getElementById("fruitSkillsBtn").addEventListener("click", () => {
   showFruitSkills();
 });
 document.getElementById("fruitSkillsBackBtn").addEventListener("click", hideFruitSkills);
+
+document.getElementById("skillTreeBtn").addEventListener("click", () => {
+  document.getElementById("selectOverlay").classList.remove("active");
+  showSkillTree();
+});
+document.getElementById("skillTreeBackBtn").addEventListener("click", hideSkillTree);
 document.getElementById("loadoutBackBtn").addEventListener("click", hideLoadoutOverlay);
 document.getElementById("skipWorldBtn").addEventListener("click", skipWorld);
 
@@ -9438,7 +9543,7 @@ function hideAchievements() {
 const LIFE_MAX = 5;                      // base; upgrades raise this via getMaxLives()
 const LIFE_REGEN_MS = 20 * 60 * 1000;    // base; upgrades shrink via getRegenMs()
 const LIFE_REFILL_COST = 50;
-function getMaxLives() { return upgVal("maxLives"); }
+function getMaxLives() { return upgVal("maxLives") + skillLevel("vitality"); } // +1 per Vitality skill level
 function getRegenMs() { return upgVal("lifeRegen") * 60 * 1000; }
 
 // Reconcile lives with elapsed time. Called on app focus + before any read/write.
@@ -9680,8 +9785,8 @@ function tutorialOnPowerActivate() {
 const BOOSTER_COSTS = { hint: 15, undo: 25, shuffle: 30, prepower: 50 };
 
 function effectiveBoosterCost(name) {
-  // Apply Booster Discount upgrade (-10% to -50%)
-  const pct = upgVal("boosterDiscount"); // 0..50
+  // Apply Booster Discount upgrade (-10% to -50%) + Thrift skill (-6% per level)
+  const pct = Math.min(85, upgVal("boosterDiscount") + skillLevel("thrift") * 6);
   return Math.max(1, Math.ceil(BOOSTER_COSTS[name] * (100 - pct) / 100));
 }
 function trySpendOnBooster(name) {
