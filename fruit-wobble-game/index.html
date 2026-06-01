@@ -8602,7 +8602,7 @@ function openLevelSelect() {
   showLevelSelect();
 }
 
-function showTutorial() {
+function showTutorial(onDone) {
   const overlay = document.getElementById("tutorialOverlay");
   const steps = overlay.querySelectorAll(".tutStep");
   const dotsEl = document.getElementById("tutDots");
@@ -8631,7 +8631,8 @@ function showTutorial() {
     data.seenTutorial = true;
     Save.save(data);
     state.busy = false;
-    showLevelSelect();
+    if (typeof onDone === "function") onDone();
+    else showLevelSelect();
   };
   render();
   state.busy = true;
@@ -10498,7 +10499,15 @@ document.getElementById("playBtn").addEventListener("click", () => {
   state.busy = false;
   const data = Save.load();
   if (!data.seenTutorial) {
-    showTutorial();
+    // New player: after the tutorial slides, drop STRAIGHT into Level 1 (not the level-select
+    // screen) so they actually start playing — startLevel(0,true) auto-fires the interactive
+    // in-game tutorial that guides them through their first chain → pop → power and the level.
+    showTutorial(() => {
+      document.getElementById("overlay").classList.remove("active");
+      state._completed = false;
+      state.gameOver = false;
+      startLevel(0, true);
+    });
   } else {
     showLevelSelect();
   }
