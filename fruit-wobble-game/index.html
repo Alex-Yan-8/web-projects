@@ -609,7 +609,8 @@
     color: #fff;
     border: 3px solid #fff;
     border-radius: 50%;
-    width: 36px; height: 36px;
+    /* fluid: shrink on small screens, cap on large */
+    width: clamp(30px, 8.5vw, 38px); height: clamp(30px, 8.5vw, 38px);
     padding: 0;
     font-family: inherit;
     font-weight: 900;
@@ -666,7 +667,7 @@
   #score {
     font-family: "Nunito", "Trebuchet MS", sans-serif;
     font-weight: 900;
-    font-size: 26px;
+    font-size: clamp(20px, 6vw, 28px);
     color: #ff5e7a;
     line-height: 1;
     display: block;
@@ -930,7 +931,7 @@
                 0 0 0 2px rgba(168,120,216,0.8);
   }
   .powerIcon {
-    width: 56px; height: 56px;
+    width: clamp(42px, 12vw, 56px); height: clamp(42px, 12vw, 56px);
     border-radius: 50%;
     background: linear-gradient(180deg, #fff, #d8e2f0);
     border: 3px solid #fff;
@@ -943,7 +944,7 @@
     filter: grayscale(0.5) brightness(0.85);
   }
   .powerIcon .pEmoji {
-    font-size: 26px;
+    font-size: clamp(20px, 7vw, 26px);
     line-height: 1;
     filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
   }
@@ -1533,7 +1534,8 @@
     background: linear-gradient(180deg, #c8e0ff, #6098e8);
     border: 3px solid #fff;
     border-radius: 16px;
-    width: 60px; height: 56px;
+    /* fluid: 5 boosters always fit the row width, even on a ~320px phone */
+    width: clamp(44px, 13vw, 62px); height: clamp(42px, 12vw, 56px);
     padding: 0;
     cursor: pointer;
     display: flex; flex-direction: column;
@@ -1556,7 +1558,7 @@
     cursor: not-allowed;
     box-shadow: 0 4px 0 #2b6fcf, 0 6px 8px rgba(0,0,0,0.15);
   }
-  .boosterIcon .bIcon { font-size: 22px; line-height: 1; }
+  .boosterIcon .bIcon { font-size: clamp(16px, 5.5vw, 22px); line-height: 1; }
   .boosterIcon .bCost {
     font-size: 11px;
     font-weight: 900;
@@ -1635,8 +1637,8 @@
     /* Size the (square) jar by BOTH width and the height left after the header, panels, boosters,
        gaps and padding (~260px) — so the whole fixed-height gameplay column always fits the
        viewport and nothing clips. dvh override keeps it correct under mobile browser chrome. */
-    width: min(92vw, calc(100vh - 260px), 540px);
-    width: min(92vw, calc(100dvh - 260px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 540px);
+    width: min(92vw, calc(100vh - 320px), 540px);
+    width: min(92vw, calc(100dvh - 320px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 540px);
     aspect-ratio: 1 / 1;
     position: relative;
     background:
