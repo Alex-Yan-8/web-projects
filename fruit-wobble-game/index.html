@@ -2859,6 +2859,33 @@
   }
   .lvNode .nodeBest.good { color: #2c8a2a; }
 
+  /* ===================== FRUIT SKILLS ===================== */
+  #fruitSkillsOverlay {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center; z-index: 60;
+    background:
+      radial-gradient(circle 120px at 78% 16%, #fff5b8 0 38%, rgba(255,222,140,0.6) 60%, transparent 85%),
+      linear-gradient(180deg, #a8dffb 0%, #c6e8fb 30%, #ffe9c2 60%, #ffd9a0 100%);
+  }
+  #fruitSkillsOverlay.active { display: flex; }
+  .fsRow { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg,#fff,#eef4ff);
+    border: 2px solid #fff; border-radius: 14px; padding: 10px 12px; margin: 8px 0;
+    box-shadow: 0 3px 0 rgba(120,140,180,0.3); text-align: left; }
+  .fsEmoji { font-size: 30px; flex-shrink: 0; }
+  .fsBody { flex: 1; min-width: 0; }
+  .fsName { font-weight: 900; font-size: 14px; color: #3a4566; }
+  .fsName .fsLvl { color: #8a63e6; font-size: 12px; margin-left: 4px; }
+  .fsEffect { font-size: 11.5px; color: #5a6680; font-weight: 700; margin-top: 2px; }
+  .fsNext { font-size: 11px; color: #2c8a2a; font-weight: 700; margin-top: 1px; }
+  .fsBar { height: 6px; border-radius: 4px; background: rgba(0,0,0,0.12); overflow: hidden; margin-top: 5px; }
+  .fsBar > i { display: block; height: 100%; background: linear-gradient(90deg,#ffd34d,#ff9f1c); }
+  .fsUpBtn { flex-shrink: 0; background: linear-gradient(180deg,#9be37a,#4fbb44); border: 2px solid #fff;
+    color: #fff; border-radius: 12px; padding: 8px 11px; font-weight: 900; font-size: 12px;
+    box-shadow: 0 3px 0 #2c8a2a; cursor: pointer; white-space: nowrap; }
+  .fsUpBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c8a2a; }
+  .fsUpBtn:disabled { background: linear-gradient(180deg,#cfd6e0,#aeb6c4); box-shadow: 0 3px 0 #8a92a0; cursor: default; transform: none; }
+  .fsUpBtn.maxed { background: linear-gradient(180deg,#ffd866,#e8a01a); box-shadow: 0 3px 0 #b07d10; color:#5a4007; }
+
   /* ===================== RESPONSIVE ===================== */
   /* Safety net: every overlay card stays within the viewport and SCROLLS instead of clipping on
      short windows / phones. Horizontal is already handled (every card is max-width:92vw). Cards
@@ -3568,6 +3595,7 @@
     <h2>Select a Level</h2>
     <div class="hubSubBar">
       <button class="loadoutOpenBtn" id="loadoutOpenBtn" type="button">🧺 Edit Loadout</button>
+      <button class="loadoutOpenBtn" id="fruitSkillsBtn" type="button">🍌 Fruit Skills</button>
       <button class="loadoutOpenBtn" id="skipWorldBtn" type="button">⏩ Skip World · 8💎</button>
     </div>
     <div class="levelMap" id="levelMap"></div>
@@ -3742,6 +3770,18 @@
     </div>
     <div class="loadoutHint">Tap to toggle which fruits appear in your puzzle. Min 2. Unlocked support fruits from the gacha can also be played.</div>
     <div class="loadoutChips" id="hubLoadoutChips"></div>
+  </div>
+</div>
+
+<div id="fruitSkillsOverlay">
+  <div class="overlayCard cosmeticsCard">
+    <div class="hubTopBar">
+      <button class="hubBackBtn" id="fruitSkillsBackBtn" type="button" aria-label="Back">←</button>
+      <h2 class="profileTitle">🍌 Fruit Skills</h2>
+      <div class="gemPill"><span class="gemIcon">💎</span><span class="gemCount">0</span></div>
+    </div>
+    <div class="loadoutHint">Powers start weak and grow to their <b>prime</b>. Spend 💎 (earned from prestige) to master each fruit.</div>
+    <div id="fruitSkillsList"></div>
   </div>
 </div>
 
@@ -4383,6 +4423,7 @@ const Save = (() => {
       coins: 0,
       pieces: { apple: 0, banana: 0, grape: 0, orange: 0 },
       tiers:  { apple: 1, banana: 1, grape: 1, orange: 1 },
+      fruitMastery: {},   // per-fruit power MASTERY level (0..MASTERY_MAX); raised with 💎 in Fruit Skills
       pullCount: 0,
       lastPull: null,
       pityCounter: 0,
@@ -4453,6 +4494,12 @@ const Save = (() => {
         }
       }
       if (typeof obj.seenInteractive !== "boolean") obj.seenInteractive = false;
+      // Per-fruit power mastery (0..MASTERY_MAX). Coerce to clamped numbers.
+      if (!obj.fruitMastery || typeof obj.fruitMastery !== "object") obj.fruitMastery = {};
+      for (const t of ["apple","banana","grape","orange","strawberry","cherry","kiwi","mango","coconut","blueberry"]) {
+        const v = obj.fruitMastery[t];
+        obj.fruitMastery[t] = (typeof v === "number" && v > 0) ? Math.min(6, Math.floor(v)) : 0;
+      }
       // Player's fruit loadout — which base fruits appear in puzzle play. Min 2.
       if (!Array.isArray(obj.loadoutAllowedTypes) || obj.loadoutAllowedTypes.length < 2) {
         obj.loadoutAllowedTypes = ["apple","banana","grape","orange"];
@@ -5242,8 +5289,8 @@ function showApplePicker() {
 
 function pickApplePickerTarget(fruit) {
   const tier = (Save.load().tiers.apple) || 1;
-  const sizeBoost = tier >= 3 ? 2 : tier >= 2 ? 1 : 0;
-  const extraConversions = tier >= 5 ? 6 : tier >= 4 ? 4 : 0;
+  const sizeBoost = Math.round(byMastery("apple", 0, 2));        // +0 weak → +2 prime
+  const extraConversions = Math.round(byMastery("apple", 0, 6)); // flips 0 weak → 6 extras at prime
 
   const apples = state.balls.filter(b =>
     b.type === "apple" && !b.popping && !b._merging && !b.isPowerup && !b.blocked
@@ -5300,6 +5347,85 @@ function pickApplePickerTarget(fruit) {
 // rally seed is closest. Seeds are placed evenly around an inner ring with a random
 // rotation. Result: bubbles already in the same area get the same NEW color, so the
 // shuffle naturally produces clusters instead of a noisy scatter.
+/* ---------------------- FRUIT POWER MASTERY ----------------------
+ * Powers start WEAK and grow to "prime" as you raise each fruit's mastery. Mastery is bought with
+ * 💎 diamonds (which prestige awards) in the Fruit Skills screen. masteryFrac() (0..1) scales each
+ * power's magnitude: e.g. banana sorts ~4 blobs at 0 and the whole board at MASTERY_MAX. */
+const MASTERY_MAX = 6;
+const MASTERY_COST = [12, 20, 32, 50, 75, 110]; // 💎 to go level i → i+1 (escalating; a long climb)
+function powerMastery(type) { return Math.min(MASTERY_MAX, (Save.load().fruitMastery || {})[type] || 0); }
+function masteryFrac(type) { return powerMastery(type) / MASTERY_MAX; } // 0..1
+function masteryUpgradeCost(type) { const m = powerMastery(type); return m >= MASTERY_MAX ? null : MASTERY_COST[m]; }
+// lerp a magnitude from its weak base to its prime value by this fruit's mastery
+function byMastery(type, base, prime) { return base + (prime - base) * masteryFrac(type); }
+
+// --- Fruit Skills UI (spend 💎 to master each base power) ---
+const FS_FRUITS = ["banana", "grape", "orange", "apple"]; // base powers covered by v1
+function masteryDescAt(type, level) {
+  const f = level / MASTERY_MAX, lerp = (a, b) => a + (b - a) * f;
+  switch (type) {
+    case "banana": return `Sorts ~${Math.round(lerp(4, 30))} blobs into colour groups`;
+    case "grape": { const n = Math.max(1, Math.round(lerp(1, 6))); return `Arms ${n} explosive grape${n === 1 ? "" : "s"} · ${lerp(1.6, 4.0).toFixed(1)}× splash${level >= MASTERY_MAX ? " · SUPER" : ""}`; }
+    case "orange": { const b = Math.max(1, Math.round(lerp(1, 4))); return `+${b} size to all fruit${level >= 4 ? " · giant drop" : ""}${level >= MASTERY_MAX ? " · free ⭐" : ""}`; }
+    case "apple": { const s = Math.round(lerp(0, 2)), e = Math.round(lerp(0, 6)); return `Convert apples → picked fruit${s > 0 ? ` · +${s} size` : ""}${e > 0 ? ` · +${e} flips` : ""}`; }
+    default: return "";
+  }
+}
+function renderFruitSkills() {
+  const list = document.getElementById("fruitSkillsList");
+  if (!list) return;
+  const data = Save.load();
+  document.querySelectorAll("#fruitSkillsOverlay .gemCount").forEach(el => el.textContent = data.gems || 0);
+  list.innerHTML = "";
+  for (const type of FS_FRUITS) {
+    const f = FRUIT_BY_TYPE[type];
+    const lvl = powerMastery(type);
+    const cost = masteryUpgradeCost(type);
+    const maxed = cost == null;
+    const afford = !maxed && (data.gems || 0) >= cost;
+    const row = document.createElement("div");
+    row.className = "fsRow";
+    row.innerHTML =
+      `<span class="fsEmoji">${f.emoji}</span>` +
+      `<div class="fsBody">` +
+        `<div class="fsName">${f.powerName || type}<span class="fsLvl">Lv ${lvl}/${MASTERY_MAX}</span></div>` +
+        `<div class="fsEffect">${masteryDescAt(type, lvl)}</div>` +
+        (maxed ? `<div class="fsNext">★ PRIME — fully mastered</div>`
+               : `<div class="fsNext">→ ${masteryDescAt(type, lvl + 1)}</div>`) +
+        `<div class="fsBar"><i style="width:${Math.round(lvl / MASTERY_MAX * 100)}%"></i></div>` +
+      `</div>` +
+      (maxed ? `<button class="fsUpBtn maxed" disabled>MAX</button>`
+             : `<button class="fsUpBtn" data-fs="${type}" ${afford ? "" : "disabled"}>${cost}💎</button>`);
+    list.appendChild(row);
+  }
+  list.querySelectorAll(".fsUpBtn[data-fs]").forEach(btn =>
+    btn.addEventListener("click", () => upgradeMastery(btn.dataset.fs)));
+}
+function upgradeMastery(type) {
+  const data = Save.load();
+  const cost = masteryUpgradeCost(type);
+  if (cost == null) return;
+  if ((data.gems || 0) < cost) { showBanner("NOT ENOUGH 💎"); return; }
+  data.gems -= cost;
+  if (!data.fruitMastery) data.fruitMastery = {};
+  data.fruitMastery[type] = Math.min(MASTERY_MAX, (data.fruitMastery[type] || 0) + 1);
+  Save.save(data);
+  Sound.play("rainbow");
+  const f = FRUIT_BY_TYPE[type];
+  showBanner(`${f.emoji} ${(f.powerName || type)} → Lv ${data.fruitMastery[type]}`);
+  if (typeof updateGemPill === "function") updateGemPill();
+  renderFruitSkills();
+}
+function showFruitSkills() {
+  state.busy = true;
+  document.getElementById("fruitSkillsOverlay").classList.add("active");
+  renderFruitSkills();
+}
+function hideFruitSkills() {
+  document.getElementById("fruitSkillsOverlay").classList.remove("active");
+  showLevelSelect();
+}
+
 function applyBananaPower() {
   const eligible = eligibleBubbles({ sizeOne: true });
   if (eligible.length === 0) return 0;
@@ -5328,13 +5454,21 @@ function applyBananaPower() {
     });
   }
 
-  // Voronoi assignment: each bubble takes the closest seed's type
-  for (const b of eligible) {
+  // Voronoi: each bubble's nearest seed + distance.
+  const assign = eligible.map(b => {
     let pick = seeds[0], best = Infinity;
     for (const s of seeds) {
       const d = Math.hypot(b.x - s.x, b.y - s.y);
       if (d < best) { best = d; pick = s; }
     }
+    return { b, pick, d: best };
+  });
+  // MASTERY: at level 0 banana only sorts the ~4 best-placed blobs; at MASTERY_MAX it sorts the
+  // whole board ("prime"). Sort by closeness to a seed and only act on the strongest `sortCount`.
+  const sortCount = Math.max(4, Math.round(byMastery("banana", 4, eligible.length)));
+  assign.sort((p, q) => p.d - q.d);
+  const sorted = assign.slice(0, sortCount);
+  for (const { b, pick } of sorted) {
     if (pick.type !== b.type) morphBubble(b, FRUIT_BY_TYPE[pick.type]);
     else b.mergeFlashUntil = performance.now() + 1500;
     pick.members.push(b);
@@ -5351,23 +5485,23 @@ function applyBananaPower() {
       if (center) setTargetSize(center, (center.size || 1) + centerBoost);
     }
   }
-  // T5: every bubble in every cluster gets a small extra boost on top
+  // T5: every SORTED bubble gets a small extra boost on top
   if (allClusterBoost > 0) {
-    for (const b of eligible) {
+    for (const { b } of sorted) {
       setTargetSize(b, (b.targetSize != null ? b.targetSize : (b.size || 1)) + allClusterBoost);
     }
   }
-  return eligible.length;
+  return sorted.length;
 }
 
 // 🍇 Grape Cluster Bomb — up to 3 random grapes become explosive (size ≥4 + isExplosive flag).
 // If fewer than 3 grapes on board, fill in by converting random size-1 bubbles to grapes.
 function applyGrapePower() {
   const tier = (Save.load().tiers.grape) || 1;
-  // Much beefier: more grapes per cast, bigger baseline splash, bigger size = bigger AoE
-  const targetCount = tier >= 5 ? 7 : tier >= 3 ? 6 : tier >= 2 ? 5 : 4;
-  const splashMult  = tier >= 4 ? 4.0 : 3.0;
-  const hasSuper    = tier >= 5;
+  // MASTERY drives magnitude (weak start → prime); gacha tier adds a small bonus on top.
+  const targetCount = Math.max(1, Math.round(byMastery("grape", 1, 6)) + (tier >= 5 ? 1 : 0));
+  const splashMult  = byMastery("grape", 1.6, 4.0) + (tier >= 4 ? 0.5 : 0);
+  const hasSuper    = powerMastery("grape") >= MASTERY_MAX; // SUPER grape only at prime
 
   const grape = FRUIT_BY_TYPE.grape;
   const grapes = eligibleBubbles({ type: "grape" });
@@ -5580,9 +5714,9 @@ function applyBlueberryPower() {
 // 🍊 Sunshine — boost every eligible bubble. Tier scales the boost + adds bonuses.
 function applyOrangePower() {
   const tier = (Save.load().tiers.orange) || 1;
-  const boost = tier >= 5 ? 4 : tier >= 3 ? 3 : tier >= 2 ? 2 : 1;
-  const giantBoost = tier >= 4;
-  const freePowerup = tier >= 5;
+  const boost = Math.max(1, Math.round(byMastery("orange", 1, 4)));       // +1 weak → +4 prime
+  const giantBoost = powerMastery("orange") >= 4;                         // giant fruit at high mastery
+  const freePowerup = powerMastery("orange") >= MASTERY_MAX;              // free ⭐ only at prime
 
   const candidates = eligibleBubbles();
   for (const b of candidates) {
@@ -6494,6 +6628,9 @@ function doPrestige() {
   // Bank the NEW stars into permanent prestige power (high-water mark prevents re-banking old stars).
   data.prestigePower = (data.prestigePower || 0) + newStars;
   data.bankedStars = totalStars();
+  // Prestige FUNDS your fruit upgrades: award 💎 diamonds (more for banking more stars).
+  const gemReward = 5 + Math.floor(newStars / 3);
+  data.gems = (data.gems || 0) + gemReward;
   // Gentle setback: drop back only 5 levels; keep coins, upgrades, fruits, and everything else.
   data.unlocked = Math.max(0, (data.unlocked || 0) - 5);
   // Re-apply permanent fruit unlocks + grant THIS prestige's reward (unlocks keyed by prestige count).
@@ -6501,7 +6638,7 @@ function doPrestige() {
   if (pr.fruits) for (const f of pr.fruits) data.tiers[f] = Math.max(1, data.tiers[f] || 0);
   const reward = grantPrestigeReward(data, data.prestige);
   Save.save(data);
-  showBanner(`✨ PRESTIGE ${data.prestige}! +${newStars}⭐ banked`);
+  showBanner(`✨ PRESTIGE ${data.prestige}! +${newStars}⭐ banked · +${gemReward}💎`);
   renderPrestige();
   if (typeof updateCoinPill === "function") updateCoinPill();
   if (typeof updateGemPill === "function") updateGemPill();
@@ -8780,6 +8917,12 @@ document.getElementById("loadoutOpenBtn").addEventListener("click", () => {
   document.getElementById("selectOverlay").classList.remove("active");
   showLoadoutOverlay();
 });
+
+document.getElementById("fruitSkillsBtn").addEventListener("click", () => {
+  document.getElementById("selectOverlay").classList.remove("active");
+  showFruitSkills();
+});
+document.getElementById("fruitSkillsBackBtn").addEventListener("click", hideFruitSkills);
 document.getElementById("loadoutBackBtn").addEventListener("click", hideLoadoutOverlay);
 document.getElementById("skipWorldBtn").addEventListener("click", skipWorld);
 
