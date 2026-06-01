@@ -7339,15 +7339,12 @@ function drawBall(b) {
   ctx2d.arc(0, 0, rr, 0, Math.PI * 2);
   ctx2d.fill();
 
-  // Selection ring — clearly marks the chained fruit without dimming the rest. White core with a
-  // thin gold edge so it reads on any fruit colour (incl. yellow banana).
+  // Selection: a soft white ring — just enough to mark the chained fruit. The warm glow above +
+  // the gentle pulse do most of the work, so this stays subtle (no dimming of the others).
   if (inChain) {
-    ctx2d.lineWidth = Math.max(2.5, rr * 0.09);
-    ctx2d.strokeStyle = "rgba(255,255,255,0.95)";
-    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.95, 0, Math.PI * 2); ctx2d.stroke();
-    ctx2d.lineWidth = Math.max(1, rr * 0.03);
-    ctx2d.strokeStyle = "rgba(245,170,30,0.9)";
-    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.99, 0, Math.PI * 2); ctx2d.stroke();
+    ctx2d.lineWidth = Math.max(2, rr * 0.06);
+    ctx2d.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.96, 0, Math.PI * 2); ctx2d.stroke();
   }
 
   ctx2d.shadowBlur = 0;
@@ -7465,7 +7462,8 @@ function ballAtPoint(x, y) {
 function adjacent(a, b) {
   if (!a || !b) return false;
   const d = Math.hypot(a.x - b.x, a.y - b.y);
-  return d < R * (effectiveScale(a) + effectiveScale(b)) * 1.6;
+  // Centers within 1.3× the touching distance (sum of radii) — must be near-touching, no big gaps.
+  return d < R * (effectiveScale(a) + effectiveScale(b)) * 1.3;
 }
 
 /* ---------------------- INPUT ---------------------- */
