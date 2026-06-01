@@ -4300,7 +4300,8 @@ const FRENZY_MULT_MIN  = 2;    // floor multiplier when entering with no Hype…
 const FRENZY_MULT_MAX  = 5;    // …base cap (each later frenzy raises it by 1)
 const FRENZY_MULT_STEP = 0.25; // ramp per scoring pop during the window
 // --- Difficulty: hard move cap + timed levels (a level can now be LOST, not just won) ---
-const MOVE_LIMIT_MULT = 2.5; // hard chain cap = ceil(parMoves × this). Run out before the target = fail.
+const MOVE_LIMIT_MULT = 1.8; // hard chain cap = ceil(parMoves × this). Tighter = harder (was 2.5, too easy).
+                             // Failure still only triggers when you ALSO can't score more (canStillScore).
                              //   Generous starting point (targets were tuned for unlimited moves) — tighten after playtest.
 const BOSS_TIME_BASE  = 75;  // boss-level countdown = BOSS_TIME_BASE + level×3 seconds (scales so the
                              //   high-target late bosses aren't impossible); 0 base = untimed bosses
@@ -4312,8 +4313,8 @@ const AIR_DRAG    = 0.985;  // gentle per-frame velocity bleed so piles actually
 const SETTLE_V    = 0.5;
 const WALL_BOUNCE = 0.45;   // bouncier walls
 const COLLISION_ITERS = 4;
-const SQUASH_DECAY = 8;     // higher = faster jiggle settle
-const SQUASH_STIFF = 70;    // higher = quicker return to round (spring k)
+const SQUASH_DECAY = 6;     // lower = jiggle lasts longer (springier, more "alive" on impact)
+const SQUASH_STIFF = 90;    // higher = bouncier spring (more oscillation before it settles)
 // --- Settling: calm the "heated gas particle" churn down to a GENTLE simmer (no freeze/sleep, so
 // gravity always applies and fruits never get stuck floating — just calm, lightly-alive motion) ---
 const REST_BOUNCE_V    = 150;  // below this approach speed, contacts don't bounce (no micro-jitter)
@@ -4939,6 +4940,9 @@ function startLevel(i, fromPlayer = false) {
   state.cherryBuff = null;
   state.slowMoUntil = 0;
   state.slowMoFactor = 1;
+  state.hintUntil = 0;
+  state.hintTrio = null;
+  state.lastMoveAt = performance.now();
   state.tutPaused = false;
   document.body.classList.remove("frenzy");
   const _ftO = document.getElementById("featureTutOverlay"); if (_ftO) _ftO.classList.remove("active");
@@ -6837,7 +6841,7 @@ function shakeScreen(intensity = 1, duration = 280) {
 function applyImpact(b, nx, ny, mag) {
   // Require a real impact — resting/grinding contact must not squash
   if (mag < 180) return;
-  const amount = Math.min(0.22, (mag - 180) * 0.0006);
+  const amount = Math.min(0.32, (mag - 180) * 0.0010); // jigglier: bigger squash on real impacts
   if (amount < 0.04) return;
   const newAngle = Math.atan2(ny, nx);
   // Only apply if this impact is meaningfully bigger than current squash
@@ -7079,6 +7083,14 @@ function physicsTick(dt) {
 function drawBalls() {
   ctx2d.clearRect(0, 0, W, H);
 
+  // Active hint overlay (distinct from any gold merge-flash): animated dashed cyan rings + a
+  // dashed line linking the trio, so it clearly reads "drag these together".
+  if (state.hintUntil && performance.now() < state.hintUntil && state.hintTrio) {
+    drawHint(state.hintTrio, performance.now());
+  } else if (state.hintUntil) {
+    state.hintUntil = 0; state.hintTrio = null;
+  }
+
   // chain line BEHIND balls
   if (state.chain.length > 1) {
     ctx2d.save();
@@ -7163,6 +7175,34 @@ function drawPowerupRings() {
   }
 }
 
+function drawHint(trio, now) {
+  // Drop any members that got popped/merged since the hint was set.
+  const alive = trio.filter(b => state.balls.includes(b) && !b.popping && !b._merging);
+  if (alive.length < 3) { state.hintUntil = 0; state.hintTrio = null; return; }
+  const [a, n0, n1] = alive; // pivot, then its two neighbors → drawable path n0→a→n1
+  const pulse = (Math.sin(now / 190) + 1) * 0.5; // 0..1
+  ctx2d.save();
+  // dashed connecting line (marching ants) through the trio
+  ctx2d.lineCap = "round"; ctx2d.lineJoin = "round";
+  ctx2d.setLineDash([11, 8]);
+  ctx2d.lineDashOffset = -(now / 45) % 19;
+  ctx2d.lineWidth = Math.max(3, R * 0.28);
+  ctx2d.strokeStyle = `rgba(90,220,255,${0.5 + pulse * 0.4})`;
+  ctx2d.beginPath();
+  ctx2d.moveTo(n0.x, n0.y); ctx2d.lineTo(a.x, a.y); ctx2d.lineTo(n1.x, n1.y);
+  ctx2d.stroke();
+  // pulsing dashed ring around each hinted fruit
+  ctx2d.setLineDash([9, 7]);
+  ctx2d.lineDashOffset = (now / 50) % 16;
+  for (const b of alive) {
+    const rr = R * effectiveScale(b) * (1.18 + pulse * 0.14);
+    ctx2d.lineWidth = 3.5;
+    ctx2d.strokeStyle = `rgba(255,255,255,${0.65 + pulse * 0.35})`;
+    ctx2d.beginPath(); ctx2d.arc(b.x, b.y, rr, 0, Math.PI * 2); ctx2d.stroke();
+  }
+  ctx2d.restore();
+}
+
 function drawBall(b) {
   const eff = effectiveScale(b);
   let rr = R * eff;
@@ -7204,8 +7244,11 @@ function drawBall(b) {
   // chain pulse on selected
   const inChain = state.chain.includes(b);
   if (inChain) {
-    const pulse = 1 + Math.sin(performance.now() / 120) * 0.06;
+    const pulse = 1 + Math.sin(performance.now() / 110) * 0.12;
     rr *= pulse;
+  } else if (state.chain.length > 0) {
+    // While a chain is being drawn, fade everything NOT selected so the chain clearly stands out.
+    alpha *= 0.38;
   }
 
   const now = performance.now();
@@ -7267,8 +7310,8 @@ function drawBall(b) {
 
   // selection / merged glow (drawn through transform; using shadowBlur which is in screen space)
   if (inChain) {
-    ctx2d.shadowColor = "rgba(255,215,0,0.85)";
-    ctx2d.shadowBlur = 18;
+    ctx2d.shadowColor = "rgba(255,255,255,0.95)";
+    ctx2d.shadowBlur = 26;
   } else if (b.size > 1) {
     const pulse = (Math.sin(now / 220) + 1) * 0.5;
     ctx2d.shadowColor = `rgba(255,215,80,${0.5 + pulse * 0.3})`;
@@ -7297,6 +7340,16 @@ function drawBall(b) {
   ctx2d.beginPath();
   ctx2d.arc(0, 0, rr, 0, Math.PI * 2);
   ctx2d.fill();
+
+  // Bold selection ring — makes chained fruit unmistakable (white core + gold edge).
+  if (inChain) {
+    ctx2d.lineWidth = Math.max(3, rr * 0.13);
+    ctx2d.strokeStyle = "rgba(255,255,255,0.97)";
+    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.96, 0, Math.PI * 2); ctx2d.stroke();
+    ctx2d.lineWidth = Math.max(1.5, rr * 0.05);
+    ctx2d.strokeStyle = "rgba(255,205,55,0.95)";
+    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.96, 0, Math.PI * 2); ctx2d.stroke();
+  }
 
   ctx2d.shadowBlur = 0;
   ctx2d.shadowColor = "transparent";
@@ -7515,6 +7568,7 @@ canvas.addEventListener("touchcancel", onUp, { passive: false });
 // NOT awarded yet — score only comes when the merged fruit is later tapped).
 function processChain(chain) {
   if (chain.length < 3) return;
+  state.lastMoveAt = performance.now(); state.hintUntil = 0; state.hintTrio = null;
   // Hard move cap reached: no more chains. The player can still POP existing merged fruit and fire
   // charged powers to reach the target (those cost no moves); failure is decided in afterMove().
   if (state.moveLimit && state.moveCount >= state.moveLimit) {
@@ -7633,6 +7687,7 @@ function processChain(chain) {
 // Tap a merged fruit (size > 1): pop it, award score, charge the power.
 function tapPopMerged(b) {
   if (b.popping || b.blocked) return;
+  state.lastMoveAt = performance.now(); state.hintUntil = 0; state.hintTrio = null;
   // If still mid-growth from a recent merge, use the target size for scoring
   const effSize = b.targetSize != null ? b.targetSize : b.size;
   if (effSize <= 1 && !b.isExplosive) return;
@@ -9575,10 +9630,8 @@ function boosterUndo() {
   showBanner("UNDO ↶");
 }
 
-function boosterHint() {
-  if (state.busy) return;
-  // Find first ball with 2+ same-type adjacent neighbors → a valid 3+ chain
-  let trio = null;
+// Find a valid 3+ chain: a pivot with 2+ same-type adjacent neighbors → drawable as n0→pivot→n1.
+function findHintTrio() {
   for (const a of state.balls) {
     if (a.popping || a._merging || a.isPowerup || a.blocked || a.lockCount > 0) continue;
     const neighbors = [];
@@ -9589,20 +9642,35 @@ function boosterHint() {
       if (adjacent(a, b)) neighbors.push(b);
       if (neighbors.length >= 2) break;
     }
-    if (neighbors.length >= 2) {
-      trio = [a, neighbors[0], neighbors[1]];
-      break;
-    }
+    if (neighbors.length >= 2) return [a, neighbors[0], neighbors[1]]; // [pivot, n0, n1]
   }
-  if (!trio) {
-    showBanner("NO CHAINS FOUND");
-    return;
-  }
-  if (!trySpendOnBooster("hint")) return;
-  for (const b of trio) b.mergeFlashUntil = performance.now() + 2200;
-  Sound.play("rainbow");
-  showBanner("HINT 💡");
+  return null;
 }
+// Set the active hint (distinct animated overlay, drawn by drawHint). free=true skips the cost.
+function setHint(trio) {
+  state.hintTrio = trio;
+  state.hintUntil = performance.now() + 2800;
+  state.lastMoveAt = performance.now(); // re-arm the idle timer so auto-hints don't stack
+}
+function boosterHint() {
+  if (state.busy) return;
+  const trio = findHintTrio();
+  if (!trio) { showBanner("NO CHAINS FOUND"); return; }
+  if (!trySpendOnBooster("hint")) return; // shows "NOT ENOUGH COINS" on failure
+  setHint(trio);
+  Sound.play("rainbow");
+  showBanner("HINT 💡 — drag these together");
+}
+// Auto-hint when the player has been idle a while (free) — so help keeps coming, not just once.
+const IDLE_HINT_MS = 6000;
+setInterval(() => {
+  if (!state.levelInProgress || state.busy || state.gameOver || state._completed) return;
+  if (state.chain && state.chain.length) return;
+  if (state.hintUntil && performance.now() < state.hintUntil) return; // already showing one
+  if (performance.now() - (state.lastMoveAt || 0) < IDLE_HINT_MS) return;
+  const trio = findHintTrio();
+  if (trio) setHint(trio);
+}, 1200);
 
 function boosterShuffle() {
   if (state.busy) return;
