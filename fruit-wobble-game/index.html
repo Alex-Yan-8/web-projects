@@ -7244,11 +7244,11 @@ function drawBall(b) {
   // chain pulse on selected
   const inChain = state.chain.includes(b);
   if (inChain) {
-    const pulse = 1 + Math.sin(performance.now() / 110) * 0.12;
+    const pulse = 1 + Math.sin(performance.now() / 115) * 0.07;
     rr *= pulse;
   } else if (state.chain.length > 0) {
-    // While a chain is being drawn, fade everything NOT selected so the chain clearly stands out.
-    alpha *= 0.38;
+    // While a chain is being drawn, gently fade everything NOT selected so the chain stands out.
+    alpha *= 0.6;
   }
 
   const now = performance.now();
@@ -7310,8 +7310,8 @@ function drawBall(b) {
 
   // selection / merged glow (drawn through transform; using shadowBlur which is in screen space)
   if (inChain) {
-    ctx2d.shadowColor = "rgba(255,255,255,0.95)";
-    ctx2d.shadowBlur = 26;
+    ctx2d.shadowColor = "rgba(255,255,255,0.8)";
+    ctx2d.shadowBlur = 18;
   } else if (b.size > 1) {
     const pulse = (Math.sin(now / 220) + 1) * 0.5;
     ctx2d.shadowColor = `rgba(255,215,80,${0.5 + pulse * 0.3})`;
@@ -7341,13 +7341,10 @@ function drawBall(b) {
   ctx2d.arc(0, 0, rr, 0, Math.PI * 2);
   ctx2d.fill();
 
-  // Bold selection ring — makes chained fruit unmistakable (white core + gold edge).
+  // Selection ring — clear but not loud (a soft white edge with a faint gold tint).
   if (inChain) {
-    ctx2d.lineWidth = Math.max(3, rr * 0.13);
-    ctx2d.strokeStyle = "rgba(255,255,255,0.97)";
-    ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.96, 0, Math.PI * 2); ctx2d.stroke();
-    ctx2d.lineWidth = Math.max(1.5, rr * 0.05);
-    ctx2d.strokeStyle = "rgba(255,205,55,0.95)";
+    ctx2d.lineWidth = Math.max(2, rr * 0.07);
+    ctx2d.strokeStyle = "rgba(255,255,255,0.7)";
     ctx2d.beginPath(); ctx2d.arc(0, 0, rr * 0.96, 0, Math.PI * 2); ctx2d.stroke();
   }
 
